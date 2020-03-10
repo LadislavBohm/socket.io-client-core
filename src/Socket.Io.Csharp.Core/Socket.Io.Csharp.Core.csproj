@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\PipelineClientWebSocket\ClientWebSocket.Pipeline.csproj" />
+      <ProjectReference Include="..\ClientWebSocket.Pipeline\ClientWebSocket.Pipeline.csproj" />
     </ItemGroup>
 
     <ItemGroup>
