@@ -1,0 +1,22 @@
+{
+  "name": "socket.io-simple-server",
+  "version": "1.0.0",
+  "description": "High-Performance Socket.IO client in C#",
+  "main": "simple-server.js",
+  "scripts": {
+    "start": "node simple-server.js"
+  },
+  "dependencies": {
+    "socket.io": "2.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LadislavBohm/socket.io-csharp-core.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LadislavBohm/socket.io-csharp-core/issues"
+  },
+  "homepage": "https://github.com/LadislavBohm/socket.io-csharp-core#readme"
+}

@@ -9,6 +9,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{2B3D75DF-7
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Socket.Io.Csharp.Core", "Socket.Io.Csharp.Core\Socket.Io.Csharp.Core.csproj", "{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Socket.Io.Csharp.Core.Test", "Socket.Io.Csharp.Core.Test\Socket.Io.Csharp.Core.Test.csproj", "{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{9DB83F9D-7A49-4F66-9788-BE433C2985A5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,9 +27,18 @@ Global
 		{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{63251039-2A61-4554-868B-5D92C46E8F95} = {9DB83F9D-7A49-4F66-9788-BE433C2985A5}
+		{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB} = {9DB83F9D-7A49-4F66-9788-BE433C2985A5}
+		{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F} = {2B3D75DF-7925-43B6-82E2-3BB682E93F86}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DA7EB277-2EF1-4806-8A0A-71AB05DD8144}
