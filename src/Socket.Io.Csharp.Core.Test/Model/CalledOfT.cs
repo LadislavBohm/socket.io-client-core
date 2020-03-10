@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
 
 namespace Socket.Io.Csharp.Core.Test.Model
 {
-    internal class Called : CalledBase
+    internal class Called<T> : CalledBase
     {
-        public Called(Func<ValueTask> callback)
+        public Called(Func<T, ValueTask> callback)
         {
             Callback = callback;
         }
 
-        public Func<ValueTask> Callback { get; }
+        public Func<T, ValueTask> Callback { get; }
     }
 }

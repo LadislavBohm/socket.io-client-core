@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Socket.Io.Csharp.Core.EventArguments;
 using Socket.Io.Csharp.Core.Extensions;
@@ -32,56 +33,66 @@ namespace Socket.Io.Csharp.Core.Test
             }
 
             [Fact]
-            public async Task LocalServer_Ping_ShouldReceivePong()
+            public async Task Ping_ShouldReceivePong()
             {
                 var client = new SocketIoClient();
-                var connect = client.EventCalled(SocketIoEvent.Connect);
                 var probeSuccess = client.EventCalled(SocketIoEvent.ProbeSuccess);
                 var probeError = client.EventCalled(SocketIoEvent.ProbeError);
 
-                var url = new Uri("http://localhost:3000").HttpToSocketIoWs();
-                await client.OpenAsync(url).TimoutAfterAsync(TimeSpan.FromSeconds(2));
+                await client.ConnectToLocalServerAsync();
 
-                await Task.WhenAll(
-                    connect.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1)),
-                    probeSuccess.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1))
-                );
-
+                await probeSuccess.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1));
                 probeError.AssertNever();
             }
 
             [Fact]
-            public async Task LocalServer_OnMessage_ShouldReceiveMessages()
+            public async Task OnMessage_ShouldReceiveMessages()
             {
                 var client = new SocketIoClient();
-                var connect = client.EventCalled(SocketIoEvent.Connect);
                 var message = client.EventCalled<MessageEventArgs>("broadcast", args =>
                 {
                     Assert.Equal("broadcast message", args.FirstData);
                 });
-                var url = new Uri("http://localhost:3000").HttpToSocketIoWs();
                 
-                await client.OpenAsync(url).TimoutAfterAsync(TimeSpan.FromSeconds(2));
-                await connect.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1));
+                await client.ConnectToLocalServerAsync();
 
                 await message.AssertAtLeastAsync(4, TimeSpan.FromSeconds(1));
             }
 
             [Fact]
-            public async Task LocalServer_OnNonExistingEvent_ShouldNotBeCalled()
+            public async Task OnNonExistingEvent_ShouldNotBeCalled()
             {
                 var client = new SocketIoClient();
-                var connect = client.EventCalled(SocketIoEvent.Connect);
                 var message = client.EventCalled<MessageEventArgs>("broadcast2", args =>
                 {
                     Assert.Equal("broadcast message", args.FirstData);
                 });
-                var url = new Uri("http://localhost:3000").HttpToSocketIoWs();
-                
-                await client.OpenAsync(url).TimoutAfterAsync(TimeSpan.FromSeconds(2));
-                await connect.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1));
 
+                await client.ConnectToLocalServerAsync();
+                
                 await message.AssertNeverAsync(TimeSpan.FromSeconds(1));
+            }
+
+            [Fact]
+            public async Task OnMessage_OffMessage_ShouldNotReceiveAfterOff()
+            {
+                var client = new SocketIoClient();
+                var message = client.EventCalled<MessageEventArgs>("broadcast", args =>
+                {
+                    Assert.Equal("broadcast message", args.FirstData);
+                });
+
+                await client.ConnectToLocalServerAsync();
+
+                await message.AssertAtLeastAsync(4, TimeSpan.FromMilliseconds(500));
+                var calledCount = message.CalledTimes;
+                client.Off("broadcast", message.Callback);
+
+                await Task.Delay(500);
+                Assert.Equal(calledCount, message.CalledTimes);
+
+                client.On("broadcast", message.Callback);
+                await message.AssertAtLeastAsync(calledCount + 4, TimeSpan.FromMilliseconds(500));
             }
         }
     }
