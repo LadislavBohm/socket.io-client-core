@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Socket.Io.Csharp.Core.EventArguments;
 using Socket.Io.Csharp.Core.Extensions;
 using Socket.Io.Csharp.Core.Model;
 using Socket.Io.Csharp.Core.Test.Extensions;
@@ -24,7 +25,7 @@ namespace Socket.Io.Csharp.Core.Test
                 var client = new SocketIoClient();
                 var called = client.EventCalled(SocketIoEvent.Connect);
                 var url = new Uri("http://localhost:3000").HttpToSocketIoWs();
-                await client.OpenAsync(url).WaitForAsync(TimeSpan.FromSeconds(2));
+                await client.OpenAsync(url).TimoutAfterAsync(TimeSpan.FromSeconds(2));
 
                 await called.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1));
                 Assert.Equal(ReadyState.Open, client.State);
@@ -39,7 +40,7 @@ namespace Socket.Io.Csharp.Core.Test
                 var probeError = client.EventCalled(SocketIoEvent.ProbeError);
 
                 var url = new Uri("http://localhost:3000").HttpToSocketIoWs();
-                await client.OpenAsync(url).WaitForAsync(TimeSpan.FromSeconds(2));
+                await client.OpenAsync(url).TimoutAfterAsync(TimeSpan.FromSeconds(2));
 
                 await Task.WhenAll(
                     connect.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1)),
@@ -47,6 +48,40 @@ namespace Socket.Io.Csharp.Core.Test
                 );
 
                 probeError.AssertNever();
+            }
+
+            [Fact]
+            public async Task LocalServer_OnMessage_ShouldReceiveMessages()
+            {
+                var client = new SocketIoClient();
+                var connect = client.EventCalled(SocketIoEvent.Connect);
+                var message = client.EventCalled<MessageEventArgs>("broadcast", args =>
+                {
+                    Assert.Equal("broadcast message", args.FirstData);
+                });
+                var url = new Uri("http://localhost:3000").HttpToSocketIoWs();
+                
+                await client.OpenAsync(url).TimoutAfterAsync(TimeSpan.FromSeconds(2));
+                await connect.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1));
+
+                await message.AssertAtLeastAsync(4, TimeSpan.FromSeconds(1));
+            }
+
+            [Fact]
+            public async Task LocalServer_OnNonExistingEvent_ShouldNotBeCalled()
+            {
+                var client = new SocketIoClient();
+                var connect = client.EventCalled(SocketIoEvent.Connect);
+                var message = client.EventCalled<MessageEventArgs>("broadcast2", args =>
+                {
+                    Assert.Equal("broadcast message", args.FirstData);
+                });
+                var url = new Uri("http://localhost:3000").HttpToSocketIoWs();
+                
+                await client.OpenAsync(url).TimoutAfterAsync(TimeSpan.FromSeconds(2));
+                await connect.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1));
+
+                await message.AssertNeverAsync(TimeSpan.FromSeconds(1));
             }
         }
     }
