@@ -45,6 +45,20 @@ namespace Socket.Io.Client.Core.Test
             }
 
             [Fact]
+            public async Task Ping_KeepConnectionAlive_ShouldCallMultiplePings()
+            {
+                var client = new SocketIoClient();
+                var probeSuccess = client.EventCalled(SocketIoEvent.ProbeSuccess);
+                var probeError = client.EventCalled(SocketIoEvent.ProbeError);
+
+                await client.ConnectToLocalServerAsync();
+
+                //ping interval is set to 50ms
+                await probeSuccess.AssertAtLeastAsync(15, TimeSpan.FromSeconds(1));
+                probeError.AssertNever();
+            }
+
+            [Fact]
             public async Task OnMessage_ShouldReceiveMessages()
             {
                 var client = new SocketIoClient();
