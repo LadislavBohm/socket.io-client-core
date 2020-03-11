@@ -29,7 +29,7 @@ namespace Socket.Io.Client.Core.Processor
             {
                 _logger.LogError($"Missing data in {packet.Type} packet.");
                 _eventEmitter.EmitAsync(SocketIoEvent.Error,
-                    new ErrorEventArgs("Missing data in {packet.Type} packet."));
+                    new ErrorEventArgs($"Missing data in {packet.Type} packet."));
                 return default;
             }
             

@@ -21,7 +21,7 @@ namespace Socket.Io.Client.Core.Test.Model
 
         public void AssertExactly(int exactly) => Assert.Equal(exactly, CalledTimes);
 
-        public void AssertAtLeast(int atLeast) => Assert.True(CalledTimes >= atLeast);
+        public void AssertAtLeast(int atLeast) => Assert.True(CalledTimes >= atLeast, $"Expected called at least: {atLeast} actual: {CalledTimes}");
 
         public async Task AssertOnceAsync(TimeSpan timeout)
         {

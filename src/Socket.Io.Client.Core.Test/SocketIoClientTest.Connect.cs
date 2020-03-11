@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Socket.Io.Client.Core.Test
 {
-    public class SocketIoClientTest
+    public partial class SocketIoClientTest
     {
         public class Connect
         {
@@ -24,7 +24,7 @@ namespace Socket.Io.Client.Core.Test
             {
                 var client = new SocketIoClient();
                 var called = client.EventCalled(SocketIoEvent.Connect);
-                var url = new Uri("http://localhost:3000").HttpToSocketIoWs();
+                var url = new Uri("http://localhost:3000");
                 await client.OpenAsync(url).TimoutAfterAsync(TimeSpan.FromSeconds(2));
 
                 await called.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1));
@@ -56,56 +56,6 @@ namespace Socket.Io.Client.Core.Test
                 //ping interval is set to 50ms
                 await probeSuccess.AssertAtLeastAsync(15, TimeSpan.FromSeconds(1));
                 probeError.AssertNever();
-            }
-
-            [Fact]
-            public async Task OnMessage_ShouldReceiveMessages()
-            {
-                var client = new SocketIoClient();
-                var message = client.EventCalled<MessageEventArgs>("broadcast", args =>
-                {
-                    Assert.Equal("broadcast message", args.FirstData);
-                });
-                
-                await client.ConnectToLocalServerAsync();
-
-                await message.AssertAtLeastAsync(4, TimeSpan.FromSeconds(1));
-            }
-
-            [Fact]
-            public async Task OnNonExistingEvent_ShouldNotBeCalled()
-            {
-                var client = new SocketIoClient();
-                var message = client.EventCalled<MessageEventArgs>("broadcast2", args =>
-                {
-                    Assert.Equal("broadcast message", args.FirstData);
-                });
-
-                await client.ConnectToLocalServerAsync();
-                
-                await message.AssertNeverAsync(TimeSpan.FromSeconds(1));
-            }
-
-            [Fact]
-            public async Task OnMessage_OffMessage_ShouldNotReceiveAfterOff()
-            {
-                var client = new SocketIoClient();
-                var message = client.EventCalled<MessageEventArgs>("broadcast", args =>
-                {
-                    Assert.Equal("broadcast message", args.FirstData);
-                });
-
-                await client.ConnectToLocalServerAsync();
-
-                await message.AssertAtLeastAsync(4, TimeSpan.FromMilliseconds(500));
-                var calledCount = message.CalledTimes;
-                client.Off("broadcast", message.Callback);
-
-                await Task.Delay(500);
-                Assert.Equal(calledCount, message.CalledTimes);
-
-                client.On("broadcast", message.Callback);
-                await message.AssertAtLeastAsync(calledCount + 4, TimeSpan.FromMilliseconds(500));
             }
         }
     }

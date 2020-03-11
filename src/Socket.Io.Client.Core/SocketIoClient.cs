@@ -47,8 +47,10 @@ namespace Socket.Io.Client.Core
             _events = new Dictionary<string, List<object>>();
             _cts = new CancellationTokenSource();
             _socket = new PipelineWebSocket();
-            _socket.OnMessage += SocketOnMessageAsync;
+            _socket.OnMessage += OnSocketMessageAsync;
         }
+
+        private bool HasDefaultNamespace => string.IsNullOrEmpty(_namespace) || _namespace == SocketIo.DefaultNamespace;
 
         private SocketIoOptions Options { get; }
 
@@ -61,7 +63,10 @@ namespace Socket.Io.Client.Core
             InitializeSocketIoEvents(_events);
             SubscribeToEvents();
             State = ReadyState.Opening;
-            await _socket.StartAsync(uri);
+
+            _namespace = uri.LocalPath;
+            var socketIoUri = uri.HttpToSocketIoWs(path: !HasDefaultNamespace ? _namespace : null);
+            await _socket.StartAsync(socketIoUri);
         }
 
         public async Task CloseAsync()
@@ -86,7 +91,7 @@ namespace Socket.Io.Client.Core
 
         #endregion
 
-        private ValueTask SocketOnMessageAsync(object sender, IMemoryOwner<byte> data)
+        private ValueTask OnSocketMessageAsync(object sender, IMemoryOwner<byte> data)
         {
             try
             {
@@ -119,7 +124,7 @@ namespace Socket.Io.Client.Core
 
         private void StartPingPong()
         {
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 while (State == ReadyState.Open && !_cts.IsCancellationRequested)
                 {
@@ -178,6 +183,7 @@ namespace Socket.Io.Client.Core
         {
             On(SocketIoEvent.Connect, OnConnect);
             On(SocketIoEvent.Handshake, (Func<HandshakeData, ValueTask>)OnHandshake);
+            On(SocketIoEvent.Open, OnOpen);
         }
 
         private int GetNextPacketId() => Interlocked.Increment(ref _packetId);
@@ -223,6 +229,15 @@ namespace Socket.Io.Client.Core
             State = ReadyState.Open;
             StartPingPong();
             return default;
+        }
+
+        private async ValueTask OnOpen()
+        {
+            if (!HasDefaultNamespace)
+            {
+                _logger.LogDebug($"Sending connect to namespace: {_namespace}");
+                await SendAsync(PacketType.Message, PacketSubType.Connect, null);
+            }
         }
 
         #endregion

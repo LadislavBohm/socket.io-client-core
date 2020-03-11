@@ -9,19 +9,14 @@ namespace Socket.Io.Client.Core.Extensions
         public static Uri HttpToSocketIoWs(this Uri httpUri, string eio = "3", string path = "", IDictionary<string, string> queryParameters = null)
         {
             var builder = new StringBuilder();
-            if (httpUri.Scheme == "https" || httpUri.Scheme == "wss")
-            {
-                builder.Append("wss://");
-            }
-            else
-            {
-                builder.Append("ws://");
-            }
+            builder.Append(httpUri.Scheme == "https" || httpUri.Scheme == "wss" ? "wss://" : "ws://");
             builder.Append(httpUri.Host);
+
             if (!httpUri.IsDefaultPort)
             {
                 builder.Append(":").Append(httpUri.Port);
             }
+            
             builder
                 .Append(string.IsNullOrWhiteSpace(path) ? "/socket.io" : path)
                 .Append("/?EIO=")

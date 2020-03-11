@@ -7,6 +7,8 @@ namespace Socket.Io.Client.Core
 {
     internal static class SocketIo
     {
+        public const string DefaultNamespace = "/";
+
         internal static class Event
         {
             internal static IDictionary<SocketIoEvent, string> Name { get; } =

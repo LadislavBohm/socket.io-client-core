@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Socket.Io.Client.Core.Extensions;
-using Socket.Io.Client.Core.Test.Extensions;
 using Socket.Io.Client.Core.Test.Model;
 
-namespace Socket.Io.Client.Core.Test
+namespace Socket.Io.Client.Core.Test.Extensions
 {
     internal static class SocketIoClientExtensions
     {
         internal static async Task ConnectToLocalServerAsync(this SocketIoClient client, string url = "http://localhost:3000",
             TimeSpan? openTimeout = null, TimeSpan? connectTimeout = null)
         {
-            openTimeout = openTimeout ?? TimeSpan.FromSeconds(2);
-            connectTimeout = connectTimeout ?? TimeSpan.FromSeconds(1);
+            openTimeout ??= TimeSpan.FromSeconds(2);
+            connectTimeout ??= TimeSpan.FromSeconds(1);
 
             var connect = client.EventCalled(SocketIoEvent.Connect);
 
-            var uri = new Uri(url).HttpToSocketIoWs();
+            var uri = new Uri(url);
             await client.OpenAsync(uri).TimoutAfterAsync(openTimeout.Value);
             await connect.AssertAtLeastOnceAsync(connectTimeout.Value);
         }

@@ -24,7 +24,7 @@ namespace Socket.Io.Client.Core.Parse
             //     obj.type = obj.type == EVENT ? BINARY_EVENT : BINARY_ACK;
             // }
 
-            if (!string.IsNullOrEmpty(packet.Namespace) && packet.Namespace != "/")
+            if (!string.IsNullOrEmpty(packet.Namespace) && packet.Namespace != SocketIo.DefaultNamespace)
             {
                 sb.Append(packet.Namespace);
                 sb.Append(",");
@@ -32,8 +32,9 @@ namespace Socket.Io.Client.Core.Parse
 
             if (packet.Id.HasValue) sb.Append(packet.Id.Value);
             if (!string.IsNullOrEmpty(packet.Data)) sb.Append(packet.Data);
+            if (sb[^1] == ',') sb.Remove(sb.Length - 1, 1);
 
-            return encoding.GetBytes(sb.ToString());
+                return encoding.GetBytes(sb.ToString());
         }
 
         internal static bool TryDecode(ReadOnlyMemory<byte> data, Encoding encoding, out Packet packet)
@@ -120,7 +121,7 @@ namespace Socket.Io.Client.Core.Parse
                 }
 
                 var result = sb.ToString();
-                span = span.Slice(result.Length);
+                span = span.Slice(result.Length + 1); //remove also the ',' character
                 return result;
             }
 
