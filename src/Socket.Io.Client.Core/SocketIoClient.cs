@@ -19,7 +19,7 @@ using Socket.Io.Client.Core.Extensions;
 
 namespace Socket.Io.Client.Core
 {
-    public partial class SocketIoClient : ISocketIoClient
+    public partial class SocketIoClient : ISocketIoClient, IDisposable
     {
         private readonly ILogger<SocketIoClient> _logger;
         private readonly PipelineWebSocket _socket;
@@ -247,5 +247,11 @@ namespace Socket.Io.Client.Core
         }
 
         #endregion
+
+        public void Dispose()
+        {
+            _socket?.Dispose();
+            _cts?.Dispose();
+        }
     }
 }

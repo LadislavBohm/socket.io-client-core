@@ -15,7 +15,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task BroadcastMessage_ShouldReceiveMessages()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 var message = client.EventCalled<MessageEventArgs>("broadcast-message",
                     args =>
                     {
@@ -30,7 +30,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task OnNonExistingEvent_ShouldNotBeCalled()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 var message = client.EventCalled<MessageEventArgs>("broadcast2",
                     args =>
                     {
@@ -45,7 +45,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task OnOff_ShouldNotReceiveAfterOff()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 var message = client.EventCalled<MessageEventArgs>("broadcast-message",
                     args =>
                     {
@@ -68,7 +68,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task ConnectToRoom_ShouldReceiveRoomMessage()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 var message = client.EventCalled<MessageEventArgs>("room-message",
                     args =>
                     {
@@ -82,7 +82,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task ConnectToNamespace_ShouldReceiveNamespaceMessage()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 var message = client.EventCalled<MessageEventArgs>("namespace-message",
                     args =>
                     {

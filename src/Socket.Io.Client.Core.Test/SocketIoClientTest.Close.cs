@@ -15,15 +15,14 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task CloseWithoutOpen_ShouldThrow()
             {
-                var client = new SocketIoClient();
-
+                using var client = new SocketIoClient();
                 await Assert.ThrowsAsync<InvalidOperationException>(async () => await client.CloseAsync());
             }
 
             [Fact]
             public async Task Open_Close_ShouldRaiseClosed()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 var closed = client.EventCalled(SocketIoEvent.Close);
 
                 await client.ConnectToLocalServerAsync();
@@ -37,7 +36,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task Open_Close_Reopen_ShouldStayOpen()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 var closed = client.EventCalled(SocketIoEvent.Close);
                 var message = client.EventCalled("broadcast-message");
 

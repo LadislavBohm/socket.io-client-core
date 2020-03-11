@@ -15,14 +15,14 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task InvalidUrl_ShouldThrow()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 await Assert.ThrowsAnyAsync<Exception>(() => client.OpenAsync(new Uri("http://abcd")));
             }
 
             [Fact]
             public async Task LocalServer_ShouldConnect()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 var called = client.EventCalled(SocketIoEvent.Connect);
                 var url = new Uri("http://localhost:3000");
                 await client.OpenAsync(url).TimoutAfterAsync(TimeSpan.FromSeconds(2));
@@ -34,7 +34,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task Ping_ShouldReceivePong()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 var probeSuccess = client.EventCalled(SocketIoEvent.ProbeSuccess);
                 var probeError = client.EventCalled(SocketIoEvent.ProbeError);
 
@@ -47,7 +47,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task Ping_KeepConnectionAlive_ShouldCallMultiplePings()
             {
-                var client = new SocketIoClient();
+                using var client = new SocketIoClient();
                 var probeSuccess = client.EventCalled(SocketIoEvent.ProbeSuccess);
                 var probeError = client.EventCalled(SocketIoEvent.ProbeError);
 
