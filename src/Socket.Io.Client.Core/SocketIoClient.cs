@@ -34,6 +34,7 @@ namespace Socket.Io.Client.Core
 
         public SocketIoClient(SocketIoOptions options = null, ILogger<SocketIoClient> logger = null)
         {
+            State = ReadyState.Closed;
             Options = options ?? new SocketIoOptions();
             _logger = logger ?? NullLogger<SocketIoClient>.Instance;
             _packetProcessors = new Dictionary<PacketType, IPacketProcessor>
@@ -71,9 +72,14 @@ namespace Socket.Io.Client.Core
 
         public async Task CloseAsync()
         {
+            if (State == ReadyState.Closing || State == ReadyState.Closed)
+                throw new InvalidOperationException($"Socket is in state: {State} and cannot be closed.");
+
             try
             {
                 State = ReadyState.Closing;
+                await SendAsync(PacketType.Message, PacketSubType.Disconnect, null);
+                await this.EmitAsync(SocketIoEvent.Close);
                 await _socket.StopAsync();
             }
             finally

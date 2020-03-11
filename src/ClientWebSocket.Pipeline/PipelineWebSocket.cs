@@ -11,8 +11,8 @@ namespace ClientWebSocket.Pipeline
 {
     public partial class PipelineWebSocket : IDisposable
     {
-        private readonly SemaphoreSlim _singleWriter = new SemaphoreSlim(1);
-        private readonly System.Net.WebSockets.ClientWebSocket _webSocket;
+        private SemaphoreSlim _singleWriter;
+        private System.Net.WebSockets.ClientWebSocket _webSocket;
         private IDuplexPipe _transport;
         private IDuplexPipe _application;
         private Task _socketProcessing;
@@ -23,7 +23,6 @@ namespace ClientWebSocket.Pipeline
         public PipelineWebSocket(PipelineWebSocketOptions options)
         {
             Options = options;
-            _webSocket = new System.Net.WebSockets.ClientWebSocket();
         }
         
         public PipelineWebSocketOptions Options { get; }
@@ -41,6 +40,8 @@ namespace ClientWebSocket.Pipeline
                 _application = pipePair.Application;
 
                 var connectTokenSource = new CancellationTokenSource(Options.ConnectTimeout);
+                _singleWriter = new SemaphoreSlim(1);
+                _webSocket = new System.Net.WebSockets.ClientWebSocket();
                 await _webSocket.ConnectAsync(url, connectTokenSource.Token);
                 RaiseOnConnected();
 

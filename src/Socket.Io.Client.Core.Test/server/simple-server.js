@@ -10,6 +10,9 @@ const io = require("socket.io")(server, {
 io.on("connection", client => {
   console.log("client connected", client.id);
   client.join("some-room");
+  client.on("disconnect", () => {
+    console.log("client disconnected", client.id);
+  });
 });
 
 setInterval(() => {
