@@ -12,7 +12,7 @@ namespace ClientWebSocket.Pipeline
         public event EventHandler<EventArgs> OnConnected;
         public event EventHandler<SocketClosedEventArgs> OnClosed;
         public event Func<IMemoryOwner<byte>, ValueTask> OnMessage;
-        public event EventHandler<SocketErrorEventArgs> OnError; 
+        internal event EventHandler<SocketErrorEventArgs> OnError; 
         
         private void RaiseOnConnected() => OnConnected?.Invoke(this, EventArgs.Empty);
 

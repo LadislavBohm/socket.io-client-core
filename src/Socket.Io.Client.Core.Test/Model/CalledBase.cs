@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -9,9 +10,12 @@ namespace Socket.Io.Client.Core.Test.Model
 {
     internal abstract class CalledBase
     {
+        private readonly ConcurrentQueue<Exception> _exceptions = new ConcurrentQueue<Exception>();
         private int _calledTimes;
-
+        
         public int CalledTimes => _calledTimes;
+
+        public void AddException(Exception ex) => _exceptions.Enqueue(ex);
 
         public void Increment() => Interlocked.Increment(ref _calledTimes);
 
@@ -22,6 +26,8 @@ namespace Socket.Io.Client.Core.Test.Model
         public void AssertExactly(int exactly) => Assert.Equal(exactly, CalledTimes);
 
         public void AssertAtLeast(int atLeast) => Assert.True(CalledTimes >= atLeast, $"Expected called at least: {atLeast} actual: {CalledTimes}");
+
+        private void AssertNoException() => Assert.Empty(_exceptions);
 
         public async Task AssertOnceAsync(TimeSpan timeout)
         {
@@ -34,6 +40,7 @@ namespace Socket.Io.Client.Core.Test.Model
             var elapsed = TimeSpan.Zero;
             while (elapsed < timeout)
             {
+                AssertNoException();
                 AssertNever();
                 elapsed = await WaitAndIncrementAsync(elapsed, 5);
             }
@@ -47,10 +54,12 @@ namespace Socket.Io.Client.Core.Test.Model
             while (elapsed < timeout)
             {
                 if (CalledTimes == exactly) break;
+                AssertNoException();
                 Assert.True(CalledTimes <= exactly);
                 elapsed = await WaitAndIncrementAsync(elapsed, 5);
             }
 
+            AssertNoException();
             AssertExactly(exactly);
         }
 
@@ -63,9 +72,11 @@ namespace Socket.Io.Client.Core.Test.Model
             {
                 if (CalledTimes >= atLeast)
                     break;
+                AssertNoException();
                 elapsed = await WaitAndIncrementAsync(elapsed, 5);
             }
 
+            AssertNoException();
             AssertAtLeast(atLeast);
         }
 

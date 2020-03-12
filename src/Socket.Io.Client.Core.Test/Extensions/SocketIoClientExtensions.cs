@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using Socket.Io.Client.Core.EventArguments;
 using Socket.Io.Client.Core.Extensions;
 using Socket.Io.Client.Core.Test.Model;
+using Xunit.Sdk;
 
 namespace Socket.Io.Client.Core.Test.Extensions
 {
@@ -64,8 +67,13 @@ namespace Socket.Io.Client.Core.Test.Extensions
 
             var innerCallback = (Func<T, ValueTask>) Callback;
             result = new Called<T>(innerCallback);
+            client.On<ErrorEventArgs>(SocketIoEvent.Error, args =>
+            {
+                if (args.Exception is XunitException) 
+                    result.AddException(args.Exception);
+                return default;
+            });
             client.On(eventName, innerCallback);
-            
             return result;
         }
     }

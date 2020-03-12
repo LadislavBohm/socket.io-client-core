@@ -136,7 +136,7 @@ namespace Socket.Io.Client.Core
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while processing socket data");
-                await this.EmitAsync(SocketIoEvent.Error, new SocketErrorEventArgs(ex));
+                await this.EmitAsync(SocketIoEvent.Error, new ErrorEventArgs(ex));
             }
         }
 
@@ -162,7 +162,7 @@ namespace Socket.Io.Client.Core
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Error while processing socket data");
-                            await this.EmitAsync(SocketIoEvent.Error, new SocketErrorEventArgs(ex));
+                            await this.EmitAsync(SocketIoEvent.Error, new ErrorEventArgs(ex));
                         }
                     }
                 }
