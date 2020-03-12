@@ -106,8 +106,7 @@ namespace ClientWebSocket.Pipeline
                     var buffer = readResult.Buffer;
                     while (Options.FrameSeparator.TryReadFrame(ref buffer, out ReadOnlySequence<byte> payload))
                     {
-                        //don't await here on purpose
-                        RaiseOnMessageAsync(payload.Lease());
+                        await RaiseOnMessageAsync(payload.Lease());
                     }
                     
                     reader.AdvanceTo(buffer.Start, buffer.End);

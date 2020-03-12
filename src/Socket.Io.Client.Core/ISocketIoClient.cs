@@ -4,7 +4,7 @@ using Socket.Io.Client.Core.Model;
 
 namespace Socket.Io.Client.Core
 {
-    public interface ISocketIoClient
+    public interface ISocketIoClient : IDisposable
     {
         ReadyState State { get; }
         

@@ -15,8 +15,12 @@ namespace Socket.Io.Client.Core.Test.Model
             _testOutputHelper = testOutputHelper;
         }
 
-        protected ILogger<T> CreateLogger<T>() => new XUnitLogger<T>(_testOutputHelper);
+        protected ILogger<T> CreateLogger<T>(LogLevel minLogLevel = LogLevel.Trace) => new XUnitLogger<T>(_testOutputHelper, minLogLevel);
 
-        protected SocketIoClient CreateClient() => new SocketIoClient(null, CreateLogger<SocketIoClient>());
+        protected SocketIoClient CreateClient(LogLevel minLogLevel = LogLevel.Debug)
+        {
+
+            return new SocketIoClient(null, CreateLogger<SocketIoClient>(minLogLevel));
+        } 
     }
 }

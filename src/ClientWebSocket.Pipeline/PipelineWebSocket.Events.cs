@@ -20,6 +20,6 @@ namespace ClientWebSocket.Pipeline
 
         private void RaiseOnError(Exception exception) => OnError?.Invoke(this, new SocketErrorEventArgs(exception));
 
-        private void RaiseOnMessageAsync(IMemoryOwner<byte> data) => OnMessage?.Invoke(data);
+        private ValueTask RaiseOnMessageAsync(IMemoryOwner<byte> data) => OnMessage?.Invoke(data) ?? default;
     }
 }

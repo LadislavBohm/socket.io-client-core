@@ -77,6 +77,8 @@ namespace Socket.Io.Client.Core
 
         public async Task OpenAsync(Uri uri)
         {
+            _logger.LogInformation($"Opening socket connection to: {uri}");
+            
             _cts = new CancellationTokenSource();
             SubscribeToEvents();
             State = ReadyState.Opening;
@@ -85,6 +87,8 @@ namespace Socket.Io.Client.Core
             var socketIoUri = uri.HttpToSocketIoWs(path: !HasDefaultNamespace ? _namespace : null);
             _ = StartPacketProcessingAsync();
             await _socket.StartAsync(socketIoUri);
+
+            _logger.LogInformation("Socket connection successfully established");
         }
 
         public async Task CloseAsync()
@@ -92,6 +96,7 @@ namespace Socket.Io.Client.Core
             if (State == ReadyState.Closing || State == ReadyState.Closed)
                 throw new InvalidOperationException($"Socket is in state: {State} and cannot be closed.");
 
+            _logger.LogInformation("Closing socket connection.");
             try
             {
                 State = ReadyState.Closing;
@@ -103,11 +108,15 @@ namespace Socket.Io.Client.Core
             {
                 await CleanupAsync();
                 State = ReadyState.Closed;
+                _logger.LogInformation("Socket connection closed.");
             }
         }
 
         ValueTask ISocketIoClient.SendAsync(Packet packet)
         {
+            if (_logger.IsEnabled(LogLevel.Debug))
+                _logger.LogDebug($"Sending packet: {packet}");
+
             var data = PacketParser.Encode(packet, Options.Encoding);
             return _socket.SendAsync(data);
         }
@@ -123,8 +132,8 @@ namespace Socket.Io.Client.Core
                     _logger.LogError($"Could not decode packet from data: {Options.Encoding.GetString(data.Memory.Span)}");
                 }
                 
-                if (_logger.IsEnabled(LogLevel.Trace))
-                    _logger.LogTrace($"Processing packet: {packet}");
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogDebug($"Processing packet: {packet}");
 
                 if (await _packetChannel.Writer.WaitToWriteAsync(_cts.Token))
                 {
@@ -245,7 +254,7 @@ namespace Socket.Io.Client.Core
 
         private ValueTask SendAsync(PacketType type, PacketSubType? subType, string data, int? id = null)
         {
-            return SendAsync(new Packet(type, subType, _namespace, data, id, 0, null));
+            return SendAsync(new Packet(type, subType, type == PacketType.Message ? _namespace : null, data, id, 0, null));
         }
 
         private ValueTask SendEmitAsync<TData>(string eventName, TData data = default, int? packetId = null)

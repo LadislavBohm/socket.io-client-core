@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Socket.Io.Client.Core.EventArguments;
 using Socket.Io.Client.Core.Test.Extensions;
 using Socket.Io.Client.Core.Test.Model;
