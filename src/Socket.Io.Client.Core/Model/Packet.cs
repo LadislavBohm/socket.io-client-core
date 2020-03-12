@@ -1,4 +1,6 @@
-﻿namespace Socket.Io.Client.Core.Model
+﻿using System.Text;
+
+namespace Socket.Io.Client.Core.Model
 {
     public class Packet
     {
@@ -29,7 +31,13 @@
     
         public override string ToString()
         {
-            return $"{nameof(Id)}: {Id}, {nameof(Type)}: {Type}, {nameof(Namespace)}: {Namespace}, {nameof(Data)}: {Data}";
+            var sb = new StringBuilder();
+            sb.Append((int) Type);
+            if (SubType.HasValue) sb.Append((int) SubType.Value);
+            if (Id.HasValue) sb.Append(Id.Value);
+            if (Namespace != SocketIo.DefaultNamespace) sb.Append(Namespace);
+            sb.Append(Data);
+            return sb.ToString();
         }
     
         public Packet WithNamespace(string ns) => new Packet(Type, SubType, ns, Data, Id, Attachments, Query);

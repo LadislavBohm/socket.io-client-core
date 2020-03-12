@@ -4,18 +4,24 @@ using System.Text;
 using System.Threading.Tasks;
 using Socket.Io.Client.Core.EventArguments;
 using Socket.Io.Client.Core.Test.Extensions;
+using Socket.Io.Client.Core.Test.Model;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Socket.Io.Client.Core.Test
 {
     public partial class SocketIoClientTest
     {
-        public class OnMessage
+        public class OnMessage : TestBase
         {
+            public OnMessage(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+            {
+            }
+
             [Fact]
             public async Task BroadcastMessage_ShouldReceiveMessages()
             {
-                using var client = new SocketIoClient();
+                using var client = CreateClient();
                 var message = client.EventCalled<MessageEventArgs>("broadcast-message",
                     args =>
                     {
@@ -30,7 +36,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task OnNonExistingEvent_ShouldNotBeCalled()
             {
-                using var client = new SocketIoClient();
+                using var client = CreateClient();
                 var message = client.EventCalled<MessageEventArgs>("broadcast2",
                     args =>
                     {
@@ -45,7 +51,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task OnOff_ShouldNotReceiveAfterOff()
             {
-                using var client = new SocketIoClient();
+                using var client = CreateClient();
                 var message = client.EventCalled<MessageEventArgs>("broadcast-message",
                     args =>
                     {
@@ -68,7 +74,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task ConnectToRoom_ShouldReceiveRoomMessage()
             {
-                using var client = new SocketIoClient();
+                using var client = CreateClient();
                 var message = client.EventCalled<MessageEventArgs>("room-message",
                     args =>
                     {
@@ -82,15 +88,18 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task ConnectToNamespace_ShouldReceiveNamespaceMessage()
             {
-                using var client = new SocketIoClient();
-                var message = client.EventCalled<MessageEventArgs>("namespace-message",
-                    args =>
-                    {
-                        Assert.Equal("namespace-message", args.FirstData);
-                    });
-                await client.ConnectToLocalServerAsync("http://localhost:3000/some-namespace");
+                for (int i = 0; i < 10; i++)
+                {
+                    using var client = CreateClient();
+                    var message = client.EventCalled<MessageEventArgs>("namespace-message",
+                        args =>
+                        {
+                            Assert.Equal("namespace-message", args.FirstData);
+                        });
+                    await client.ConnectToLocalServerAsync("http://localhost:3000/some-namespace");
 
-                await message.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1));
+                    await message.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1));
+                }
             }
         }
     }

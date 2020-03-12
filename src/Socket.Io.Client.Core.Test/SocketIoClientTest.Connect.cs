@@ -4,25 +4,31 @@ using Socket.Io.Client.Core.EventArguments;
 using Socket.Io.Client.Core.Extensions;
 using Socket.Io.Client.Core.Model;
 using Socket.Io.Client.Core.Test.Extensions;
+using Socket.Io.Client.Core.Test.Model;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Socket.Io.Client.Core.Test
 {
     public partial class SocketIoClientTest
     {
-        public class Connect
+        public class Connect :TestBase
         {
+            public Connect(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+            {
+            }
+
             [Fact]
             public async Task InvalidUrl_ShouldThrow()
             {
-                using var client = new SocketIoClient();
+                using var client = CreateClient();
                 await Assert.ThrowsAnyAsync<Exception>(() => client.OpenAsync(new Uri("http://abcd")));
             }
 
             [Fact]
             public async Task LocalServer_ShouldConnect()
             {
-                using var client = new SocketIoClient();
+                using var client = CreateClient();
                 var called = client.EventCalled(SocketIoEvent.Connect);
                 var url = new Uri("http://localhost:3000");
                 await client.OpenAsync(url).TimeoutAfterAsync(TimeSpan.FromSeconds(2));
@@ -34,7 +40,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task Ping_ShouldReceivePong()
             {
-                using var client = new SocketIoClient();
+                using var client = CreateClient();
                 var probeSuccess = client.EventCalled(SocketIoEvent.ProbeSuccess);
                 var probeError = client.EventCalled(SocketIoEvent.ProbeError);
 
@@ -47,7 +53,7 @@ namespace Socket.Io.Client.Core.Test
             [Fact]
             public async Task Ping_KeepConnectionAlive_ShouldCallMultiplePings()
             {
-                using var client = new SocketIoClient();
+                using var client = CreateClient();
                 var probeSuccess = client.EventCalled(SocketIoEvent.ProbeSuccess);
                 var probeError = client.EventCalled(SocketIoEvent.ProbeError);
 
