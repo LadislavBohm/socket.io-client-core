@@ -15,6 +15,11 @@ io.on("connection", client => {
   });
 });
 
+const namespace = io.of("some-namespace");
+namespace.on("connection", client => {
+  console.log(`client connected ${client.id}`);
+});
+
 setInterval(() => {
   io.emit("broadcast-message", "broadcast-message");
 }, 25);
@@ -23,10 +28,8 @@ setInterval(() => {
   io.to("some-room").emit("room-message", "room-message");
 }, 25);
 
-const namespace = io.of("some-namespace");
-namespace.on("connection", client => {
-  console.log(`client connected ${client.id}`);
+setInterval(() => {
   namespace.emit("namespace-message", "namespace-message");
-});
+}, 25);
 
 server.listen(3000);

@@ -16,7 +16,7 @@ namespace Socket.Io.Client.Core.Test.Extensions
             var connect = client.EventCalled(SocketIoEvent.Connect);
 
             var uri = new Uri(url);
-            await client.OpenAsync(uri).TimoutAfterAsync(openTimeout.Value);
+            await client.OpenAsync(uri).TimeoutAfterAsync(openTimeout.Value);
             await connect.AssertAtLeastOnceAsync(connectTimeout.Value);
         }
 
@@ -64,7 +64,7 @@ namespace Socket.Io.Client.Core.Test.Extensions
 
             var innerCallback = (Func<T, ValueTask>) Callback;
             result = new Called<T>(innerCallback);
-            client.On<T>(eventName, innerCallback);
+            client.On(eventName, innerCallback);
             
             return result;
         }

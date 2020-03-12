@@ -23,24 +23,21 @@ namespace Socket.Io.Client.Core.Processor
             _logger = logger;
         }
 
-        public ValueTask ProcessAsync(Packet packet)
+        public async ValueTask ProcessAsync(Packet packet)
         {
             if (string.IsNullOrEmpty(packet.Data))
             {
                 _logger.LogError($"Missing data in {packet.Type} packet.");
-                _eventEmitter.EmitAsync(SocketIoEvent.Error,
+                await _eventEmitter.EmitAsync(SocketIoEvent.Error,
                     new ErrorEventArgs($"Missing data in {packet.Type} packet."));
-                return default;
             }
             
             var data = JsonSerializer.Deserialize<HandshakeData>(packet.Data, _options);
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.LogDebug($"Received handshake data: {data}.");
 
-            _eventEmitter.EmitAsync(SocketIoEvent.Handshake, data);
-            _eventEmitter.EmitAsync(SocketIoEvent.Open);
-
-            return default;
+            await _eventEmitter.EmitAsync(SocketIoEvent.Handshake, data);
+            await _eventEmitter.EmitAsync(SocketIoEvent.Open);
         }
     }
 }

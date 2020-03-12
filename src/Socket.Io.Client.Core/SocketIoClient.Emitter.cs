@@ -151,7 +151,7 @@ namespace Socket.Io.Client.Core
             if (callback != null)
             {
                 packetId = GetNextPacketId();
-                _callbacks.Add(packetId.Value, callback);
+                _callbacks.AddOrUpdate(packetId.Value, callback, (i, o) => callback);
             }
 
             return packetId;

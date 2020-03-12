@@ -77,10 +77,10 @@ namespace ClientWebSocket.Pipeline
                 Cleanup(exception);
             }
         }
-        
+
         public ValueTask SendAsync(string data, Encoding encoding = null) =>
             WriteAsync((encoding ?? Options.DefaultEncoding).GetBytes(data));
-        
+
         public ValueTask SendAsync(ReadOnlyMemory<byte> message) => WriteAsync(message);
         
         public void Dispose()
@@ -106,7 +106,8 @@ namespace ClientWebSocket.Pipeline
                     var buffer = readResult.Buffer;
                     while (Options.FrameSeparator.TryReadFrame(ref buffer, out ReadOnlySequence<byte> payload))
                     {
-                        await RaiseOnMessage(this, payload.Lease());
+                        //don't await here on purpose
+                        RaiseOnMessageAsync(payload.Lease());
                     }
                     
                     reader.AdvanceTo(buffer.Start, buffer.End);

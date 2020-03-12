@@ -20,8 +20,7 @@ namespace Socket.Io.Client.Core.Processor
         public ValueTask ProcessAsync(Packet packet)
         {
             _logger.LogError($"Received error packet. Data: {packet.Data}");
-            _emitter.EmitAsync(SocketIoEvent.Error, new ErrorEventArgs(packet.Data));
-            return default;
+            return _emitter.EmitAsync(SocketIoEvent.Error, new ErrorEventArgs(packet.Data));
         }
     }
 }

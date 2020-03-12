@@ -9,7 +9,7 @@ namespace Socket.Io.Client.Core.Test.Model
 {
     internal abstract class CalledBase
     {
-        private int _calledTimes = 0;
+        private int _calledTimes;
 
         public int CalledTimes => _calledTimes;
 

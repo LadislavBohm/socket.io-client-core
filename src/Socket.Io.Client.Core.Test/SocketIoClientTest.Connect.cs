@@ -25,7 +25,7 @@ namespace Socket.Io.Client.Core.Test
                 using var client = new SocketIoClient();
                 var called = client.EventCalled(SocketIoEvent.Connect);
                 var url = new Uri("http://localhost:3000");
-                await client.OpenAsync(url).TimoutAfterAsync(TimeSpan.FromSeconds(2));
+                await client.OpenAsync(url).TimeoutAfterAsync(TimeSpan.FromSeconds(2));
 
                 await called.AssertAtLeastOnceAsync(TimeSpan.FromSeconds(1));
                 Assert.Equal(ReadyState.Open, client.State);

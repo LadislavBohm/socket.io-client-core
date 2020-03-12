@@ -19,8 +19,7 @@ namespace Socket.Io.Client.Core.Processor
         
         public ValueTask ProcessAsync(Packet packet)
         {
-            _emitter.EmitAsync(SocketIoEvent.Pong, new PongEventArgs(packet));
-            return default;
+            return _emitter.EmitAsync(SocketIoEvent.Pong, new PongEventArgs(packet));
         }
     }
 }

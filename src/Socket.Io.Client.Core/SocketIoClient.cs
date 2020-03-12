@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using ClientWebSocket.Pipeline;
 using ClientWebSocket.Pipeline.EventArguments;
@@ -24,8 +27,9 @@ namespace Socket.Io.Client.Core
         private readonly ILogger<SocketIoClient> _logger;
         private readonly PipelineWebSocket _socket;
         private readonly IDictionary<PacketType, IPacketProcessor> _packetProcessors;
-        private readonly IDictionary<string, List<object>> _events;
-        private readonly IDictionary<int, object> _callbacks;
+        private readonly ConcurrentDictionary<string, List<object>> _events;
+        private readonly ConcurrentDictionary<int, object> _callbacks;
+        private readonly Channel<Packet> _packetChannel;
 
         private int _packetId = -1;
         private string _namespace = "/";
@@ -44,10 +48,22 @@ namespace Socket.Io.Client.Core
                 { PacketType.Error, new ErrorPacketProcessor(this, _logger) },
                 { PacketType.Message, new MessagePacketProcessor(this, _logger) },
             };
-            _callbacks = new Dictionary<int, object>();
-            _events = new Dictionary<string, List<object>>();
+            _callbacks = new ConcurrentDictionary<int, object>();
+            _events = new ConcurrentDictionary<string, List<object>>();
+            InitializeSocketIoEvents(_events);
             _cts = new CancellationTokenSource();
             _socket = new PipelineWebSocket();
+            switch (Options.PacketChannelOptions)
+            {
+                case UnboundedChannelOptions unboundedOptions:
+                    _packetChannel = Channel.CreateUnbounded<Packet>(unboundedOptions);
+                    break;
+                case BoundedChannelOptions boundedOptions:
+                    _packetChannel = Channel.CreateBounded<Packet>(boundedOptions);
+                    break;
+                default:
+                    throw new NotSupportedException($"Channel options of type: {Options.PacketChannelOptions.GetType()} are not supported.");
+            }
             _socket.OnMessage += OnSocketMessageAsync;
         }
 
@@ -61,12 +77,13 @@ namespace Socket.Io.Client.Core
 
         public async Task OpenAsync(Uri uri)
         {
-            InitializeSocketIoEvents(_events);
+            _cts = new CancellationTokenSource();
             SubscribeToEvents();
             State = ReadyState.Opening;
 
             _namespace = uri.LocalPath;
             var socketIoUri = uri.HttpToSocketIoWs(path: !HasDefaultNamespace ? _namespace : null);
+            _ = StartPacketProcessingAsync();
             await _socket.StartAsync(socketIoUri);
         }
 
@@ -84,7 +101,7 @@ namespace Socket.Io.Client.Core
             }
             finally
             {
-                await Cleanup();
+                await CleanupAsync();
                 State = ReadyState.Closed;
             }
         }
@@ -97,35 +114,61 @@ namespace Socket.Io.Client.Core
 
         #endregion
 
-        private ValueTask OnSocketMessageAsync(object sender, IMemoryOwner<byte> data)
+        private async ValueTask OnSocketMessageAsync(IMemoryOwner<byte> data)
         {
             try
             {
                 if (!PacketParser.TryDecode(data.Memory, Options.Encoding, out var packet))
                 {
                     _logger.LogError($"Could not decode packet from data: {Options.Encoding.GetString(data.Memory.Span)}");
-                    return default;
                 }
-
+                
                 if (_logger.IsEnabled(LogLevel.Trace))
                     _logger.LogTrace($"Processing packet: {packet}");
 
-                if (!_packetProcessors.TryGetValue(packet.Type, out var processor))
+                if (await _packetChannel.Writer.WaitToWriteAsync(_cts.Token))
                 {
-                    _logger.LogWarning($"Unsupported packet type: {packet.Type}. Data: {packet}");
-                }
-                else
-                {
-                    return processor.ProcessAsync(packet);
+                    var writeResult = _packetChannel.Writer.TryWrite(packet);
+                    if (!writeResult)
+                        _logger.LogWarning($"Failed to write packet: {packet} to channel.");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while processing socket data");
-                this.EmitAsync(SocketIoEvent.Error, new SocketErrorEventArgs(ex));
+                await this.EmitAsync(SocketIoEvent.Error, new SocketErrorEventArgs(ex));
             }
+        }
 
-            return default;
+        private Task StartPacketProcessingAsync()
+        {
+            var processingTasks = Enumerable.Repeat(Task.Run(async () =>
+            {
+                while (await _packetChannel.Reader.WaitToReadAsync(_cts.Token))
+                {
+                    while (_packetChannel.Reader.TryRead(out var packet))
+                    {
+                        try
+                        {
+                            if (!_packetProcessors.TryGetValue(packet.Type, out var processor))
+                            {
+                                _logger.LogWarning($"Unsupported packet type: {packet.Type}. Data: {packet}");
+                            }
+                            else
+                            {
+                                await processor.ProcessAsync(packet);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error while processing socket data");
+                            await this.EmitAsync(SocketIoEvent.Error, new SocketErrorEventArgs(ex));
+                        }
+                    }
+                }
+            }, _cts.Token), Options.PacketProcessingThreadCount);
+
+            return Task.WhenAll(processingTasks);
         }
 
         private void StartPingPong()
@@ -173,11 +216,9 @@ namespace Socket.Io.Client.Core
             }
         }
 
-        private ValueTask Cleanup()
+        private ValueTask CleanupAsync()
         {
             _cts.Cancel();
-            _cts.Dispose();
-            _cts = new CancellationTokenSource();
             _callbacks.Clear();
             _events.Clear();
             return default;
@@ -196,7 +237,8 @@ namespace Socket.Io.Client.Core
 
         private void InitializeSocketIoEvents(IDictionary<string, List<object>> events)
         {
-            Enums.GetValues<SocketIoEvent>().Select(e => events[SocketIo.Event.Name[e]] = new List<object>());
+            foreach (var ioEvent in Enums.GetValues<SocketIoEvent>())
+                events[SocketIo.Event.Name[ioEvent]] = new List<object>();
         }
 
         private ValueTask SendAsync(Packet packet) => ((ISocketIoClient)this).SendAsync(packet);
@@ -252,6 +294,7 @@ namespace Socket.Io.Client.Core
         {
             _socket?.Dispose();
             _cts?.Dispose();
+            _packetChannel.Writer.TryComplete();
         }
     }
 }
