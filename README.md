@@ -2,7 +2,7 @@
 
 ![](socket-io-logo.png)
 
-# Socket.IO client in .NET Core
+# Socket.IO 2.0 client written in C
 
 High-performance C# client for socket.io version 2.0. Flexibility achieved via [Reactive Extensions](https://github.com/dotnet/reactive#reactive-extensions) and optional configuration. Built on top of .NET Standard 2.1.
 
