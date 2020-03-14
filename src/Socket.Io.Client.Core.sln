@@ -3,19 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClientWebSocket.Pipeline", "ClientWebSocket.Pipeline\ClientWebSocket.Pipeline.csproj", "{63251039-2A61-4554-868B-5D92C46E8F95}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{2B3D75DF-7925-43B6-82E2-3BB682E93F86}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Socket.Io.Client.Core", "Socket.Io.Client.Core\Socket.Io.Client.Core.csproj", "{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Socket.Io.Client.Core.Test", "Socket.Io.Client.Core.Test\Socket.Io.Client.Core.Test.csproj", "{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{9DB83F9D-7A49-4F66-9788-BE433C2985A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Socket.Io.Client.Core.Reactive", "Socket.Io.Client.Core.Reactive\Socket.Io.Client.Core.Reactive.csproj", "{F6A41CC0-F827-4B95-914B-29F4717CCB44}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Socket.Io.Client.Core", "Socket.Io.Client.Core\Socket.Io.Client.Core.csproj", "{F6A41CC0-F827-4B95-914B-29F4717CCB44}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Socket.Io.Client.Core.Reactive.Test", "Socket.Io.Client.Core.Reactive.Test\Socket.Io.Client.Core.Reactive.Test.csproj", "{0859442E-E0F5-46D9-8D31-2AC9985C431C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Socket.Io.Client.Core.Test", "Socket.Io.Client.Core.Test\Socket.Io.Client.Core.Test.csproj", "{0859442E-E0F5-46D9-8D31-2AC9985C431C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,18 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{63251039-2A61-4554-868B-5D92C46E8F95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{63251039-2A61-4554-868B-5D92C46E8F95}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{63251039-2A61-4554-868B-5D92C46E8F95}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{63251039-2A61-4554-868B-5D92C46E8F95}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F6A41CC0-F827-4B95-914B-29F4717CCB44}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F6A41CC0-F827-4B95-914B-29F4717CCB44}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6A41CC0-F827-4B95-914B-29F4717CCB44}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -48,9 +30,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{63251039-2A61-4554-868B-5D92C46E8F95} = {9DB83F9D-7A49-4F66-9788-BE433C2985A5}
-		{C83ECD74-7F3E-4334-8B2B-4524FBAC30CB} = {9DB83F9D-7A49-4F66-9788-BE433C2985A5}
-		{AEFFBA53-A40C-4B44-BA43-1CB65B90EA9F} = {2B3D75DF-7925-43B6-82E2-3BB682E93F86}
 		{F6A41CC0-F827-4B95-914B-29F4717CCB44} = {9DB83F9D-7A49-4F66-9788-BE433C2985A5}
 		{0859442E-E0F5-46D9-8D31-2AC9985C431C} = {2B3D75DF-7925-43B6-82E2-3BB682E93F86}
 	EndGlobalSection

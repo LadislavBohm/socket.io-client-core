@@ -1,264 +1,129 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
+using System.IO;
+using System.Net.WebSockets;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
-using ClientWebSocket.Pipeline;
-using ClientWebSocket.Pipeline.EventArguments;
-using EnumsNET;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Socket.Io.Client.Core.EventArguments;
+using Socket.Io.Client.Core.Json;
 using Socket.Io.Client.Core.Model;
+using Socket.Io.Client.Core.Model.Response;
+using Socket.Io.Client.Core.Model.SocketEvent;
+using Socket.Io.Client.Core.Model.SocketIo;
 using Socket.Io.Client.Core.Parse;
-using Socket.Io.Client.Core.Processor;
+using Socket.Io.Client.Core.Processing;
 using Socket.Io.Client.Core.Extensions;
+using Websocket.Client;
 
 namespace Socket.Io.Client.Core
 {
-    public partial class SocketIoClient : ISocketIoClient, IDisposable
+    public partial class SocketIoClient : IDisposable, ISocketIoClient
     {
-        private readonly ILogger<SocketIoClient> _logger;
-        private readonly PipelineWebSocket _socket;
-        private readonly IDictionary<PacketType, IPacketProcessor> _packetProcessors;
-        private readonly ConcurrentDictionary<string, List<object>> _events;
-        private readonly ConcurrentDictionary<int, object> _callbacks;
-        private readonly Channel<Packet> _packetChannel;
+        private IWebsocketClient _socket;
+
+        private IDisposable _disconnectSubscription;
+        private IDisposable _messageSubscription;
+        private IDisposable _pingPongSubscription;
 
         private int _packetId = -1;
-        private string _namespace = "/";
-        private TimeSpan _pingInterval = TimeSpan.FromSeconds(5);
-        private CancellationTokenSource _cts;
+        private string _namespace;
+        private HandshakeResponse _currentHandshake;
 
-        public SocketIoClient(SocketIoOptions options = null, ILogger<SocketIoClient> logger = null)
+        private readonly IDictionary<EngineIoType, IPacketProcessor> _packetProcessors;
+        private readonly ConcurrentQueue<Packet> _sentPingPackets = new ConcurrentQueue<Packet>();
+
+        public SocketIoClient(SocketIoClientOptions options = null)
         {
-            State = ReadyState.Closed;
-            Options = options ?? new SocketIoOptions();
-            _logger = logger ?? NullLogger<SocketIoClient>.Instance;
-            _packetProcessors = new Dictionary<PacketType, IPacketProcessor>
+            Options = options ?? new SocketIoClientOptions();
+            _packetProcessors = new Dictionary<EngineIoType, IPacketProcessor>
             {
-                { PacketType.Open, new OpenPacketProcessor(this, Options.JsonSerializerOptions, _logger) },
-                { PacketType.Pong, new PongPacketProcessor(this, _logger) },
-                { PacketType.Error, new ErrorPacketProcessor(this, _logger) },
-                { PacketType.Message, new MessagePacketProcessor(this, _logger) },
+                { EngineIoType.Open, new OpenPacketProcessor(this, Logger) },
+                { EngineIoType.Pong, new PongPacketProcessor(this, Logger) },
+                { EngineIoType.Error, new ErrorPacketProcessor(this, Logger) },
+                { EngineIoType.Message, new MessagePacketProcessor(this, Logger) }
             };
-            _callbacks = new ConcurrentDictionary<int, object>();
-            _events = new ConcurrentDictionary<string, List<object>>();
-            InitializeSocketIoEvents(_events);
-            _cts = new CancellationTokenSource();
-            _socket = new PipelineWebSocket();
-            switch (Options.PacketChannelOptions)
-            {
-                case UnboundedChannelOptions unboundedOptions:
-                    _packetChannel = Channel.CreateUnbounded<Packet>(unboundedOptions);
-                    break;
-                case BoundedChannelOptions boundedOptions:
-                    _packetChannel = Channel.CreateBounded<Packet>(boundedOptions);
-                    break;
-                default:
-                    throw new NotSupportedException($"Channel options of type: {Options.PacketChannelOptions.GetType()} are not supported.");
-            }
-            _socket.OnMessage += OnSocketMessageAsync;
         }
 
+        #region Private Properties
+
         private bool HasDefaultNamespace => string.IsNullOrEmpty(_namespace) || _namespace == SocketIo.DefaultNamespace;
+        private ILogger<SocketIoClient> Logger => Options.Logger;
+        private IJsonSerializer Json => Options.JsonSerializer;
+        private Encoding Encoding => Options.Encoding;
 
-        private SocketIoOptions Options { get; }
+        #endregion
 
-        public ReadyState State { get; private set; }
+        public SocketIoEvents Events { get; } = new SocketIoEvents();
+        public SocketIoClientOptions Options { get; }
+        public bool IsRunning => _socket?.IsRunning ?? false;
+        public ReadyState State { get; private set; } = ReadyState.Closed;
 
-        #region ISocketIoClient Implementation
+        #region Public Methods
 
         public async Task OpenAsync(Uri uri)
         {
-            _logger.LogInformation($"Opening socket connection to: {uri}");
-            
-            _cts = new CancellationTokenSource();
-            SubscribeToEvents();
-            State = ReadyState.Opening;
+            ThrowIfStarted();
 
-            _namespace = uri.LocalPath;
-            var socketIoUri = uri.HttpToSocketIoWs(path: !HasDefaultNamespace ? _namespace : null);
-            _ = StartPacketProcessingAsync();
-            await _socket.StartAsync(socketIoUri);
+            try
+            {
+                Logger.LogInformation($"Opening socket connection to: {uri}");
 
-            _logger.LogInformation("Socket connection successfully established");
+                State = ReadyState.Opening;
+                _namespace = uri.LocalPath;
+                var socketIoUri = uri.ToSocketIoWebSocketUri();
+                _socket = new WebsocketClient(socketIoUri) { MessageEncoding = Encoding, IsReconnectionEnabled = false };
+                _socket.DisconnectionHappened.Subscribe(OnDisconnect);
+                
+                Events.HandshakeSubject.Subscribe(OnHandshake);
+                Events.OnPong.Subscribe(OnPong);
+                Events.OnOpen.Subscribe(OnOpen);
+
+                await StartSocketAsync();
+
+                State = ReadyState.Open;
+                Logger.LogInformation("Socket connection successfully established.");
+            }
+            catch (Exception)
+            {
+                State = ReadyState.Closed;
+                throw;
+            }
         }
 
         public async Task CloseAsync()
         {
-            if (State == ReadyState.Closing || State == ReadyState.Closed)
-                throw new InvalidOperationException($"Socket is in state: {State} and cannot be closed.");
+            ThrowIfNotStarted();
 
-            _logger.LogInformation("Closing socket connection.");
+            Logger.LogInformation("Closing socket connection.");
+
             try
             {
                 State = ReadyState.Closing;
-                await SendAsync(PacketType.Message, PacketSubType.Disconnect, null);
-                await this.EmitAsync(SocketIoEvent.Close);
-                await _socket.StopAsync();
+                _packetId = -1;
+                _currentHandshake = null;
+                _sentPingPackets.Clear();
+                await _socket.StopOrFail(WebSocketCloseStatus.NormalClosure, string.Empty);
             }
             finally
             {
-                await CleanupAsync();
+                Logger.LogInformation("Socket connection closed.");
                 State = ReadyState.Closed;
-                _logger.LogInformation("Socket connection closed.");
             }
         }
 
-        ValueTask ISocketIoClient.SendAsync(Packet packet)
+        public IObservable<AckMessageEvent> Emit(string eventName) => Emit<object>(eventName, null);
+
+        public IObservable<AckMessageEvent> Emit<TData>(string eventName, TData data)
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.LogDebug($"Sending packet: {packet}");
+            ThrowIfInvalidEvent(eventName);
+            ThrowIfNotRunning();
 
-            var data = PacketParser.Encode(packet, Options.Encoding);
-            return _socket.SendAsync(data);
-        }
-
-        #endregion
-
-        private async ValueTask OnSocketMessageAsync(IMemoryOwner<byte> data)
-        {
-            try
-            {
-                if (!PacketParser.TryDecode(data.Memory, Options.Encoding, out var packet))
-                {
-                    _logger.LogError($"Could not decode packet from data: {Options.Encoding.GetString(data.Memory.Span)}");
-                }
-                
-                if (_logger.IsEnabled(LogLevel.Debug))
-                    _logger.LogDebug($"Processing packet: {packet}");
-
-                if (await _packetChannel.Writer.WaitToWriteAsync(_cts.Token))
-                {
-                    var writeResult = _packetChannel.Writer.TryWrite(packet);
-                    if (!writeResult)
-                        _logger.LogWarning($"Failed to write packet: {packet} to channel.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while processing socket data");
-                await this.EmitAsync(SocketIoEvent.Error, new ErrorEventArgs(ex));
-            }
-        }
-
-        private Task StartPacketProcessingAsync()
-        {
-            var processingTasks = Enumerable.Repeat(Task.Run(async () =>
-            {
-                while (await _packetChannel.Reader.WaitToReadAsync(_cts.Token))
-                {
-                    while (_packetChannel.Reader.TryRead(out var packet))
-                    {
-                        try
-                        {
-                            if (!_packetProcessors.TryGetValue(packet.Type, out var processor))
-                            {
-                                _logger.LogWarning($"Unsupported packet type: {packet.Type}. Data: {packet}");
-                            }
-                            else
-                            {
-                                await processor.ProcessAsync(packet);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error while processing socket data");
-                            await this.EmitAsync(SocketIoEvent.Error, new ErrorEventArgs(ex));
-                        }
-                    }
-                }
-            }, _cts.Token), Options.PacketProcessingThreadCount);
-
-            return Task.WhenAll(processingTasks);
-        }
-
-        private void StartPingPong()
-        {
-            Task.Run(async () =>
-            {
-                while (State == ReadyState.Open && !_cts.IsCancellationRequested)
-                {
-                    try
-                    {
-                        await SendAndValidatePingAsync();
-                        _cts.Token.ThrowIfCancellationRequested();
-                    }
-                    catch (OperationCanceledException) { }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Error while performing ping/pong.");
-                        await this.EmitAsync(SocketIoEvent.Error, new ErrorEventArgs(ex));
-                    }
-                    finally
-                    {
-                        await Task.Delay(_pingInterval, _cts.Token);
-                    }
-                }
-            });
-        }
-
-        private async ValueTask SendAndValidatePingAsync()
-        {
-            var data = string.Empty;
-
-            //ping packet does not have subtype
-            await SendAsync(PacketType.Ping, null, data);
-            OnOnce(SocketIoEvent.Pong, (Func<PongEventArgs, ValueTask>)OnPong);
-
-            ValueTask OnPong(PongEventArgs args)
-            {
-                if (data != args.Pong.Data)
-                {
-                    _logger.LogError($"Server responded with incorrect pong packet. Ping data: [{data}] Pong packet: [{args.Pong}]");
-                    return this.EmitAsync(SocketIoEvent.ProbeError, new ErrorEventArgs("Server responded with incorrect pong."));
-                }
-
-                return this.EmitAsync(SocketIoEvent.ProbeSuccess);
-            }
-        }
-
-        private ValueTask CleanupAsync()
-        {
-            _cts.Cancel();
-            _callbacks.Clear();
-            _events.Clear();
-            return default;
-        }
-
-        #region Helpers
-
-        private void SubscribeToEvents()
-        {
-            On(SocketIoEvent.Connect, OnConnect);
-            On(SocketIoEvent.Handshake, (Func<HandshakeData, ValueTask>)OnHandshake);
-            On(SocketIoEvent.Open, OnOpen);
-        }
-
-        private int GetNextPacketId() => Interlocked.Increment(ref _packetId);
-
-        private void InitializeSocketIoEvents(IDictionary<string, List<object>> events)
-        {
-            foreach (var ioEvent in Enums.GetValues<SocketIoEvent>())
-                events[SocketIo.Event.Name[ioEvent]] = new List<object>();
-        }
-
-        private ValueTask SendAsync(Packet packet) => ((ISocketIoClient)this).SendAsync(packet);
-
-        private ValueTask SendAsync(PacketType type, PacketSubType? subType, string data, int? id = null)
-        {
-            return SendAsync(new Packet(type, subType, type == PacketType.Message ? _namespace : null, data, id, 0, null));
-        }
-
-        private ValueTask SendEmitAsync<TData>(string eventName, TData data = default, int? packetId = null)
-        {
+            Logger.LogDebug($"Emitting event '{eventName}'.");
             var sb = new StringBuilder()
                      .Append("[\"")
                      .Append(eventName)
@@ -267,43 +132,156 @@ namespace Socket.Io.Client.Core
             if (data != null)
             {
                 sb.Append(",");
-                sb.Append(JsonSerializer.Serialize(data, Options.JsonSerializerOptions));
+                sb.Append(Json.Serialize(data));
             }
 
             sb.Append("]");
 
-            return SendAsync(PacketType.Message, PacketSubType.Event, sb.ToString(), packetId);
+            var packet = CreatePacket(EngineIoType.Message, SocketIoType.Event, sb.ToString(), GetNextPacketId());
+            var result = Events.AckMessageSubject.Where(m => m.Ack == packet.Id).Take(1);
+            
+            Send(packet);
+            return result;
         }
 
-        private ValueTask OnHandshake(HandshakeData arg)
+        public IObservable<EventMessageEvent> On(string eventName)
         {
-            _pingInterval = TimeSpan.FromMilliseconds(arg.PingInterval);
-            return default;
-        }
-
-        private ValueTask OnConnect()
-        {
-            State = ReadyState.Open;
-            StartPingPong();
-            return default;
-        }
-
-        private async ValueTask OnOpen()
-        {
-            if (!HasDefaultNamespace)
-            {
-                _logger.LogDebug($"Sending connect to namespace: {_namespace}");
-                await SendAsync(PacketType.Message, PacketSubType.Connect, null);
-            }
+            ThrowIfInvalidEvent(eventName);
+            return Events.EventMessageSubject.Where(m => m.EventName == eventName);
         }
 
         #endregion
 
+        private async Task StartSocketAsync()
+        {
+            var disconnects = new List<DisconnectEvent>();
+            var messages = new List<ResponseMessage>();
+
+            //start temporary collecting messages and disconnects to local collection
+            using IDisposable disconnectSubscription = _socket.DisconnectionHappened
+                .Select(info => new DisconnectEvent(info.CloseStatus, info.CloseStatusDescription, info.Exception)).Subscribe(disconnects.Add);
+            using IDisposable messageSubscription = _socket.MessageReceived.Subscribe(messages.Add);
+
+            //wait until start finishes
+            await _socket.StartOrFail();
+
+            //start real subscriptions and prepend any temporary collected data to them
+            _disconnectSubscription = _socket.DisconnectionHappened
+                .Select(info => new DisconnectEvent(info.CloseStatus, info.CloseStatusDescription, info.Exception))
+                .StartWith(disconnects)
+                .Subscribe(Events.DisconnectSubject);
+            _messageSubscription = _socket.MessageReceived.StartWith(messages).Subscribe(OnMessage);
+        }
+
+        private void OnMessage(ResponseMessage message)
+        {
+            try
+            {
+                if (!PacketParser.TryDecode(message.Text, out var packet))
+                {
+                    Logger.LogError($"Could not decode packet from data: {message}");
+                }
+
+                if (Logger.IsEnabled(LogLevel.Trace))
+                    Logger.LogTrace($"Processing packet: {packet}");
+
+                Events.PacketSubject.OnNext(packet);
+                if (_packetProcessors.TryGetValue(packet.EngineIoType, out var processor))
+                {
+                    processor.Process(packet);
+                }
+                else
+                {
+                    Logger.LogWarning($"Unsupported packet type: {packet.EngineIoType}. Data: {packet}");
+                    //give any notice to user?
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"Error while processing socket data. Data: {message}");
+                Events.ErrorSubject.OnNext(new ErrorEvent(ex, $"Error while processing socket data. Data: {message}"));
+            }
+        }
+
+        private void OnHandshake(HandshakeResponse data)
+        {
+            _currentHandshake = data;
+            try
+            {
+                _pingPongSubscription?.Dispose();
+            }
+            finally
+            {
+                _pingPongSubscription = Observable
+                    .Interval(TimeSpan.FromMilliseconds(_currentHandshake.PingInterval))
+                    .Subscribe(i =>
+                    {
+                        Logger.LogDebug("Sending PING packet");
+                        var ping = CreatePacket(EngineIoType.Ping, null, null, null);
+                        Send(ping);
+                        _sentPingPackets.Enqueue(ping);
+                    });
+            }
+        }
+
+        private void OnOpen(Unit obj)
+        {
+            if (!HasDefaultNamespace)
+            {
+                Logger.LogDebug($"Sending connect to namespace: {_namespace}");
+                Send(CreatePacket(EngineIoType.Message, SocketIoType.Connect, null, null));
+            }
+        }
+
+        private void OnPong(PongResponse pong)
+        {
+            if (_sentPingPackets.TryDequeue(out var ping))
+            {
+                //if data is not empty then it was 'probe' packet so we should check if server responded with same data
+                if (!string.IsNullOrEmpty(ping.Data))
+                {
+                    if (ping.Data != pong.Data)
+                    {
+                        Logger.LogWarning($"Invalid PONG packet received on probe packet. PING: {ping.Data} PONG: {pong.Data}");
+                        Events.ProbeErrorSubject.OnNext(new ProbeErrorEvent(ping.Data, pong.Data));
+                    }
+                }
+            }
+            else
+            {
+                Logger.LogWarning($"No corresponding PING packet found for PONG: {pong}");
+            }
+        }
+
+        private void OnDisconnect(DisconnectionInfo info)
+        {
+            Logger.LogWarning(info.Exception,
+                $"Underlying socket has disconnected. Type: {info.Type}, Status: {info.CloseStatus}, Description: {info.CloseStatusDescription}");
+        }
+
+        private void Send(Packet packet)
+        { 
+            ThrowIfNotRunning();
+            _socket.Send(PacketParser.Encode(packet));
+        }
+
+        private Packet CreatePacket(EngineIoType engineType, SocketIoType? socketType, string data, int? id)
+        {
+            return new Packet(engineType, socketType, engineType == EngineIoType.Message ? _namespace : null, data, id,
+                0, null);
+        }
+
+        private int GetNextPacketId() => Interlocked.Increment(ref _packetId);
+
         public void Dispose()
         {
+            Logger.LogInformation("Disposing socket.");
+            
+            Events?.Dispose();
+            _pingPongSubscription?.Dispose();
+            _disconnectSubscription?.Dispose();
+            _messageSubscription?.Dispose();
             _socket?.Dispose();
-            _cts?.Dispose();
-            _packetChannel.Writer.TryComplete();
         }
     }
 }

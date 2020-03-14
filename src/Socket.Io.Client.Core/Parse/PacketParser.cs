@@ -1,23 +1,21 @@
 ﻿using System;
-using System.Buffers;
-using System.Buffers.Binary;
 using System.Text;
-using System.Text.Json;
-using EnumsNET;
-using Socket.Io.Client.Core.Model;
+using Socket.Io.Client.Core.Model.SocketIo;
 using Socket.Io.Client.Core.Extensions;
 
 namespace Socket.Io.Client.Core.Parse
 {
     public static class PacketParser
     {
-        internal static ReadOnlyMemory<byte> Encode(Packet packet, Encoding encoding)
+        internal static ReadOnlyMemory<byte> Encode(Packet packet, Encoding encoding) => encoding.GetBytes(Encode(packet));
+
+        internal static string Encode(Packet packet)
         {
             var sb = new StringBuilder();
-            sb.Append((int)packet.Type);
+            sb.Append((int)packet.EngineIoType);
 
-            if (packet.SubType.HasValue)
-                sb.Append((int)packet.SubType);
+            if (packet.SocketIoType.HasValue)
+                sb.Append((int)packet.SocketIoType);
 
             // implement this mechanism once binary packets are supported
             // if ((obj.type == EVENT || obj.type == ACK) && HasBinary.hasBinary(obj.data)) {
@@ -34,7 +32,7 @@ namespace Socket.Io.Client.Core.Parse
             if (!string.IsNullOrEmpty(packet.Data)) sb.Append(packet.Data);
             if (sb[^1] == ',') sb.Remove(sb.Length - 1, 1);
 
-                return encoding.GetBytes(sb.ToString());
+            return sb.ToString();
         }
 
         internal static bool TryDecode(ReadOnlyMemory<byte> data, Encoding encoding, out Packet packet)
@@ -43,20 +41,28 @@ namespace Socket.Io.Client.Core.Parse
             if (data.IsEmpty) return false;
 
             string dataString = encoding.GetString(data.Span);
-            var span = dataString.AsSpan();
+            return TryDecode(dataString, out packet);
+        }
+
+        internal static bool TryDecode(string data, out Packet packet)
+        {
+            packet = null;
+            if (string.IsNullOrEmpty(data)) return false;
+
+            var span = data.AsSpan();
             if (!TryParsePacketType(span.Slice(0, 1), out var type))
                 return false;
 
             switch (type)
             {
-                case PacketType.Open:
+                case EngineIoType.Open:
                     //handshake packet
-                    packet = new Packet(type, PacketSubType.Connect, null, span.Slice(1).ToString(), null, 0, null);
+                    packet = new Packet(type, SocketIoType.Connect, null, span.Slice(1).ToString(), null, 0, null);
                     return true;
-                case PacketType.Ping:
+                case EngineIoType.Ping:
                     packet = new Packet(type, null, null, span.Slice(1).ToString(), null, 0, null);
                     return true;
-                case PacketType.Pong:
+                case EngineIoType.Pong:
                     packet = new Packet(type, null, null, span.Slice(1).ToString(), null, 0, null);
                     return true;
             }
@@ -70,23 +76,23 @@ namespace Socket.Io.Client.Core.Parse
             return true;
         }
 
-        private static bool TryParsePacketType(ReadOnlySpan<char> typeSpan, out PacketType type)
+        private static bool TryParsePacketType(ReadOnlySpan<char> typeSpan, out EngineIoType type)
         {
             type = default;
             if (!int.TryParse(typeSpan, out int intType)) return false;
 
-            type = (PacketType)intType;
-            if (!type.IsDefined()) return false;
+            type = (EngineIoType)intType;
+            if (!Enum.IsDefined(typeof(EngineIoType), type)) return false;
             
             return true;
         }
 
-        private static PacketSubType ParsePacketSubType(ReadOnlySpan<char> typeSpan)
+        private static SocketIoType ParsePacketSubType(ReadOnlySpan<char> typeSpan)
         {
             if (!int.TryParse(typeSpan, out int intType))
                 ThrowInvalidDataException();
-            var subType = (PacketSubType)intType;
-            if (!subType.IsDefined()) ThrowInvalidDataException($"Invalid packet type: {intType}");
+            var subType = (SocketIoType)intType;
+            if (!Enum.IsDefined(typeof(SocketIoType), subType)) ThrowInvalidDataException($"Invalid packet type: {intType}");
             if (subType.IsBinaryType())
                 throw new NotImplementedException();
             return subType;
@@ -94,7 +100,7 @@ namespace Socket.Io.Client.Core.Parse
 
         private static int? ParsePacketId(ref ReadOnlySpan<char> span)
         {
-            if (span.IsEmpty) return null;
+            if (span.IsEmpty || span[0] == '[') return null;
             var sb = new StringBuilder();
             foreach (var c in span)
             {
