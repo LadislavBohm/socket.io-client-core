@@ -100,7 +100,7 @@ namespace Socket.Io.Client.Core.Reactive.Parse
 
         private static int? ParsePacketId(ref ReadOnlySpan<char> span)
         {
-            if (span.IsEmpty) return null;
+            if (span.IsEmpty || span[0] == '[') return null;
             var sb = new StringBuilder();
             foreach (var c in span)
             {

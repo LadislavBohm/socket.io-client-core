@@ -1,10 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reactive.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Socket.Io.Client.Core.Reactive.Model.SocketIo;
 using Socket.Io.Client.Core.Reactive.Test.Extensions;
 using Socket.Io.Client.Core.Reactive.Test.Model;
@@ -13,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace Socket.Io.Client.Core.Reactive.Test
 {
-    public class SocketIoClientTest
+    public partial class SocketIoClientTest
     {
         public class Connect : TestBase
         {

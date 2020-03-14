@@ -24,9 +24,12 @@ namespace Socket.Io.Client.Core.Reactive
     public partial class SocketIoClient : IDisposable, ISocketIoClient
     {
         private IWebsocketClient _socket;
+
         private IDisposable _disconnectSubscription;
         private IDisposable _messageSubscription;
         private IDisposable _pingPongSubscription;
+
+        private int _packetId = -1;
         private string _namespace;
         private HandshakeResponse _currentHandshake;
 
@@ -108,8 +111,35 @@ namespace Socket.Io.Client.Core.Reactive
             }
         }
 
+        public IObservable<MessageEvent> Emit(string eventName) => Emit<object>(eventName, null);
+
+        public IObservable<MessageEvent> Emit<TData>(string eventName, TData data)
+        {
+            ThrowIfInvalidEvent(eventName);
+
+            Logger.LogDebug($"Emitting event '{eventName}'.");
+            var sb = new StringBuilder()
+                     .Append("[\"")
+                     .Append(eventName)
+                     .Append("\"");
+
+            if (data != null)
+            {
+                sb.Append(",");
+                sb.Append(Json.Serialize(data));
+            }
+
+            sb.Append("]");
+
+            var packet = CreatePacket(EngineIoType.Message, SocketIoType.Event, sb.ToString(), GetNextPacketId());
+            var result = Events.AckMessageSubject.Where(m => m.Ack == packet.Id).Take(1);
+            
+            Send(packet);
+            return result;
+        }
+
         #endregion
-        
+
         private async Task StartSocketAsync()
         {
             var disconnects = new List<DisconnectEvent>();
@@ -117,11 +147,8 @@ namespace Socket.Io.Client.Core.Reactive
 
             //start temporary collecting messages and disconnects to local collection
             using IDisposable disconnectSubscription = _socket.DisconnectionHappened
-                .Select(info => new DisconnectEvent(info.CloseStatus, info.CloseStatusDescription, info.Exception))
-                .Subscribe(disconnects.Add);
-            using IDisposable messageSubscription = _socket.MessageReceived
-                .Where(m => m.MessageType == WebSocketMessageType.Text)
-                .Subscribe(messages.Add);
+                .Select(info => new DisconnectEvent(info.CloseStatus, info.CloseStatusDescription, info.Exception)).Subscribe(disconnects.Add);
+            using IDisposable messageSubscription = _socket.MessageReceived.Subscribe(messages.Add);
 
             //wait until start finishes
             await _socket.StartOrFail();
@@ -131,13 +158,10 @@ namespace Socket.Io.Client.Core.Reactive
                 .Select(info => new DisconnectEvent(info.CloseStatus, info.CloseStatusDescription, info.Exception))
                 .StartWith(disconnects)
                 .Subscribe(Events.DisconnectSubject);
-            _messageSubscription = _socket.MessageReceived
-                .Where(m => m.MessageType == WebSocketMessageType.Text)
-                .StartWith(messages)
-                .Subscribe(OnTextMessage);
+            _messageSubscription = _socket.MessageReceived.StartWith(messages).Subscribe(OnMessage);
         }
 
-        private void OnTextMessage(ResponseMessage message)
+        private void OnMessage(ResponseMessage message)
         {
             try
             {
@@ -146,8 +170,8 @@ namespace Socket.Io.Client.Core.Reactive
                     Logger.LogError($"Could not decode packet from data: {message}");
                 }
 
-                if (Logger.IsEnabled(LogLevel.Debug))
-                    Logger.LogDebug($"Processing packet: {packet}");
+                if (Logger.IsEnabled(LogLevel.Trace))
+                    Logger.LogTrace($"Processing packet: {packet}");
 
                 Events.PacketSubject.OnNext(packet);
                 if (_packetProcessors.TryGetValue(packet.EngineIoType, out var processor))
@@ -180,6 +204,7 @@ namespace Socket.Io.Client.Core.Reactive
                     .Interval(TimeSpan.FromMilliseconds(_currentHandshake.PingInterval))
                     .Subscribe(i =>
                     {
+                        Logger.LogDebug("Sending PING packet");
                         var ping = CreatePacket(EngineIoType.Ping, null, null, null);
                         Send(ping);
                         _sentPingPackets.Enqueue(ping);
@@ -225,12 +250,17 @@ namespace Socket.Io.Client.Core.Reactive
                 0, null);
         }
 
+        private int GetNextPacketId() => Interlocked.Increment(ref _packetId);
+
         public void Dispose()
         {
-            _socket?.Dispose();
+            Logger.LogInformation("Disposing socket.");
+            
+            Events?.Dispose();
+            _pingPongSubscription?.Dispose();
             _disconnectSubscription?.Dispose();
             _messageSubscription?.Dispose();
-            _pingPongSubscription?.Dispose();
+            _socket?.Dispose();
         }
     }
 }
