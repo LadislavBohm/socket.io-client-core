@@ -57,12 +57,44 @@ namespace Socket.Io.Client.Core.Reactive.Test
                 using var client = CreateClient();
                 using var called = client.Events.OnPong.SubscribeCalled();
                 using var probeError = client.Events.OnProbeError.SubscribeCalled();
-
+                
                 await client.OpenAsync(new Uri("http://localhost:3000"));
 
                 //ping interval is set to 50ms
                 await called.AssertAtLeastAsync(5, TimeSpan.FromMilliseconds(300));
                 probeError.AssertNever();
+            }
+
+            [Fact]
+            public async Task DefaultNamespace_ShouldNotReceiveMessagesFromCustomNamespace()
+            {
+                using var client = CreateClient();
+
+                var called = client.On("namespace-message").SubscribeCalled(m =>
+                {
+                    Assert.Equal("namespace-message", m.EventName);
+                    Assert.Equal("namespace-message", m.FirstData);
+                });
+
+                await client.OpenAsync(new Uri("http://localhost:3000/"));
+
+                await called.AssertNeverAsync(TimeSpan.FromMilliseconds(100));
+            }
+
+            [Fact]
+            public async Task CustomNamespace_ShouldReceiveMessagesFromNamespace()
+            {
+                using var client = CreateClient();
+
+                var called = client.On("namespace-message").SubscribeCalled(m =>
+                {
+                    Assert.Equal("namespace-message", m.EventName);
+                    Assert.Equal("namespace-message", m.FirstData);
+                });
+
+                await client.OpenAsync(new Uri("http://localhost:3000/some-namespace"));
+
+                await called.AssertAtLeastAsync(3, TimeSpan.FromMilliseconds(100));
             }
         }
     }

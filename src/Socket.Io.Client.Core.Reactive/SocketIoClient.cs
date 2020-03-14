@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.WebSockets;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
@@ -50,12 +51,12 @@ namespace Socket.Io.Client.Core.Reactive
 
         #region Private Properties
 
+        private bool HasDefaultNamespace => string.IsNullOrEmpty(_namespace) || _namespace == SocketIo.DefaultNamespace;
         private ILogger<SocketIoClient> Logger => Options.Logger;
         private IJsonSerializer Json => Options.JsonSerializer;
         private Encoding Encoding => Options.Encoding;
 
         #endregion
-
 
         public SocketIoEvents Events { get; } = new SocketIoEvents();
         public SocketIoClientOptions Options { get; }
@@ -80,6 +81,7 @@ namespace Socket.Io.Client.Core.Reactive
                 
                 Events.HandshakeSubject.Subscribe(OnHandshake);
                 Events.OnPong.Subscribe(OnPong);
+                Events.OnOpen.Subscribe(OnOpen);
 
                 await StartSocketAsync();
 
@@ -102,6 +104,9 @@ namespace Socket.Io.Client.Core.Reactive
             try
             {
                 State = ReadyState.Closing;
+                _packetId = -1;
+                _currentHandshake = null;
+                _sentPingPackets.Clear();
                 await _socket.StopOrFail(WebSocketCloseStatus.NormalClosure, string.Empty);
             }
             finally
@@ -216,6 +221,15 @@ namespace Socket.Io.Client.Core.Reactive
                         Send(ping);
                         _sentPingPackets.Enqueue(ping);
                     });
+            }
+        }
+
+        private void OnOpen(Unit obj)
+        {
+            if (!HasDefaultNamespace)
+            {
+                Logger.LogDebug($"Sending connect to namespace: {_namespace}");
+                Send(CreatePacket(EngineIoType.Message, SocketIoType.Connect, null, null));
             }
         }
 
