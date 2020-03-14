@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Socket.Io.Client.Core;
+using Socket.Io.Client.Core.Model;
 using Xunit.Abstractions;
 
 namespace Socket.Io.Client.Core.Test.Model
@@ -19,8 +18,7 @@ namespace Socket.Io.Client.Core.Test.Model
 
         protected SocketIoClient CreateClient(LogLevel minLogLevel = LogLevel.Debug)
         {
-
-            return new SocketIoClient(null, CreateLogger<SocketIoClient>(minLogLevel));
+            return new SocketIoClient(new SocketIoClientOptions().With(logger: CreateLogger<SocketIoClient>(minLogLevel)));
         } 
     }
 }

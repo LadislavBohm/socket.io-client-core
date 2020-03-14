@@ -4,9 +4,9 @@ using System.Text;
 
 namespace Socket.Io.Client.Core.Extensions
 {
-    public static class UriExtensions
+    internal static class UriExtensions
     {
-        public static Uri HttpToSocketIoWs(this Uri httpUri, string eio = "3", string path = "", IDictionary<string, string> queryParameters = null)
+        internal static Uri ToSocketIoWebSocketUri(this Uri httpUri, string eio = "3", string path = "", IDictionary<string, string> queryParameters = null)
         {
             var builder = new StringBuilder();
             builder.Append(httpUri.Scheme == "https" || httpUri.Scheme == "wss" ? "wss://" : "ws://");
@@ -16,7 +16,7 @@ namespace Socket.Io.Client.Core.Extensions
             {
                 builder.Append(":").Append(httpUri.Port);
             }
-            
+
             builder
                 .Append(string.IsNullOrWhiteSpace(path) ? "/socket.io" : path)
                 .Append("/?EIO=")
