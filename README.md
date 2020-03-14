@@ -6,6 +6,12 @@
 
 High-performance C# client for socket.io version 2.0. Flexibility achieved via [Reactive Extensions](https://github.com/dotnet/reactive#reactive-extensions) and optional configuration. Built on top of .NET Standard 2.1.
 
+## Installation
+
+```
+PM> Install-Package Socket.Io.Client.Core
+```
+
 ## Features
 
 - Fully async or non-blocking flexible API
