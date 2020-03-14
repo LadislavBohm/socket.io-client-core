@@ -15,7 +15,9 @@ namespace Socket.Io.Client.Core.Reactive
         Task CloseAsync();
         void Dispose();
 
-        IObservable<MessageEvent> Emit(string eventName);
-        IObservable<MessageEvent> Emit<TData>(string eventName, TData data);
+        IObservable<AckMessageEvent> Emit(string eventName);
+        IObservable<AckMessageEvent> Emit<TData>(string eventName, TData data);
+
+        IObservable<EventMessageEvent> On(string eventName);
     }
 }

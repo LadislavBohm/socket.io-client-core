@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reactive;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -59,23 +60,19 @@ namespace Socket.Io.Client.Core.Reactive.Processing
                     if (packet.Id.HasValue && _logger.IsEnabled(LogLevel.Debug))
                         _logger.LogDebug($"Received packet with ACK: {packet.Id.Value}");
 
-                    MessageEvent message;
-                    ISubject<MessageEvent> subject;
-
-                    if (packet.Id.HasValue)
+                    if (packet.SocketIoType == SocketIoType.Ack && packet.Id.HasValue)
                     {
-                        message = new MessageEvent(packet.Id, eventArray);
-                        subject = _client.Events.AckMessageSubject;
+                        _client.Events.AckMessageSubject.OnNext(new AckMessageEvent(packet.Id.Value, eventArray));
                     }
                     else
                     {
                         //first element should contain event name
                         //we can have zero, one or multiple arguments after event name so emit based on number of them
-                        message = eventArray.Length == 1 ? MessageEvent.Empty : new MessageEvent(packet.Id, eventArray[1..]);
-                        subject = _client.Events.MessageSubject;
+                        var message = eventArray.Length == 1
+                            ? new EventMessageEvent(eventArray[0], new List<string>())
+                            : new EventMessageEvent(eventArray[0], eventArray[1..]);
+                        _client.Events.EventMessageSubject.OnNext(message);
                     }
-                    
-                    subject.OnNext(message);
                 }
             }
             catch (JsonParsingException ex)

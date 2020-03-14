@@ -20,9 +20,10 @@ namespace Socket.Io.Client.Core.Reactive
         internal ISubject<Unit> OpenSubject { get; } = new Subject<Unit>();
         internal ISubject<Packet> PacketSubject { get; } = new Subject<Packet>();
         internal ISubject<ProbeErrorEvent> ProbeErrorSubject { get; } = new Subject<ProbeErrorEvent>();
-        internal ISubject<MessageEvent> MessageSubject { get; } = new Subject<MessageEvent>();
         internal ISubject<Unit> ConnectSubject { get; } = new Subject<Unit>();
-        internal ISubject<MessageEvent> AckMessageSubject { get; } = new Subject<MessageEvent>();
+        internal ISubject<EventMessageEvent> EventMessageSubject { get; } = new Subject<EventMessageEvent>();
+        internal ISubject<AckMessageEvent> AckMessageSubject { get; } = new Subject<AckMessageEvent>();
+
 
         public IObservable<HandshakeResponse> OnHandshake => HandshakeSubject.AsObservable();
         public IObservable<DisconnectEvent> OnDisconnect => DisconnectSubject.AsObservable();
@@ -31,7 +32,6 @@ namespace Socket.Io.Client.Core.Reactive
         public IObservable<Unit> OnOpen => OpenSubject.AsObservable();
         public IObservable<Packet> OnPacket => PacketSubject.AsObservable();
         public IObservable<ProbeErrorEvent> OnProbeError => ProbeErrorSubject.AsObservable();
-        public IObservable<MessageEvent> OnMessage => MessageSubject.AsObservable();
         public IObservable<Unit> OnConnect => ConnectSubject.AsObservable();
 
         public void Dispose()

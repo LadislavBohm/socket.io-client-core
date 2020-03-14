@@ -6,11 +6,10 @@ using System.Text;
 
 namespace Socket.Io.Client.Core.Reactive.Model.SocketEvent
 {
-    public class MessageEvent
+    public abstract class MessageEvent
     {
-        public MessageEvent(int? ack, IReadOnlyList<string> data)
+        internal MessageEvent(IReadOnlyList<string> data)
         {
-            Ack = ack;
             Data = data;
         }
 
@@ -18,11 +17,5 @@ namespace Socket.Io.Client.Core.Reactive.Model.SocketEvent
 
         [IgnoreDataMember]
         public string FirstData => Data?.FirstOrDefault();
-        
-        [IgnoreDataMember]
-        internal int? Ack { get; }
-
-        [IgnoreDataMember]
-        public static MessageEvent Empty { get; } = new MessageEvent(null, new List<string>());
     }
 }

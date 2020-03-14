@@ -38,7 +38,7 @@ namespace Socket.Io.Client.Core.Reactive.Test
                 using var client = CreateClient();
 
                 await client.OpenAsync(new Uri("http://localhost:3000"));
-                var messages = new List<Called<MessageEvent>>();
+                var messages = new List<Called<AckMessageEvent>>();
                 try
                 {
                     for (int i = 0; i < 10; i++)
@@ -64,7 +64,7 @@ namespace Socket.Io.Client.Core.Reactive.Test
                 using var client = CreateClient();
 
                 await client.OpenAsync(new Uri("http://localhost:3000"));
-                var messages = new List<Called<MessageEvent>>();
+                var messages = new List<Called<AckMessageEvent>>();
                 try
                 {
                     Parallel.For(0, 10, i =>

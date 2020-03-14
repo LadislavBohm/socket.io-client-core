@@ -111,11 +111,12 @@ namespace Socket.Io.Client.Core.Reactive
             }
         }
 
-        public IObservable<MessageEvent> Emit(string eventName) => Emit<object>(eventName, null);
+        public IObservable<AckMessageEvent> Emit(string eventName) => Emit<object>(eventName, null);
 
-        public IObservable<MessageEvent> Emit<TData>(string eventName, TData data)
+        public IObservable<AckMessageEvent> Emit<TData>(string eventName, TData data)
         {
             ThrowIfInvalidEvent(eventName);
+            ThrowIfNotRunning();
 
             Logger.LogDebug($"Emitting event '{eventName}'.");
             var sb = new StringBuilder()
@@ -136,6 +137,12 @@ namespace Socket.Io.Client.Core.Reactive
             
             Send(packet);
             return result;
+        }
+
+        public IObservable<EventMessageEvent> On(string eventName)
+        {
+            ThrowIfInvalidEvent(eventName);
+            return Events.EventMessageSubject.Where(m => m.EventName == eventName);
         }
 
         #endregion

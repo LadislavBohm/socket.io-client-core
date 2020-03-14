@@ -17,8 +17,8 @@ namespace Socket.Io.Client.Core.Reactive.Test.Model
         {
             _subscription = observable.Subscribe(data =>
             {
-                Increment();
                 action?.Invoke(data);
+                Increment();
             });
         }
 
