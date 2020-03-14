@@ -14,8 +14,8 @@ PM> Install-Package Socket.Io.Client.Core
 
 ## Features
 
-- Fully async or non-blocking flexible API
-- Emit events and receive options acknowledgements
+- Fully async and non-blocking flexible API
+- Emit events and receive optional callbacks
 - Subscribe/Unsubscribe to events
 - Monitor socket state
   - React to various socket high/low-level events
