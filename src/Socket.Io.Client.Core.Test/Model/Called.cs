@@ -38,12 +38,6 @@ namespace Socket.Io.Client.Core.Test.Model
 
         private void AssertNoException() => Assert.Empty(_exceptions);
 
-        public async Task AssertOnceAsync(TimeSpan timeout)
-        {
-            await Task.Delay(timeout);
-            AssertOnce();
-        }
-
         public async Task AssertNeverAsync(TimeSpan timeout)
         {
             var elapsed = TimeSpan.Zero;
@@ -55,7 +49,7 @@ namespace Socket.Io.Client.Core.Test.Model
             }
         }
 
-        public Task AssertExactlyOnceAsync(TimeSpan timeout) => AssertExactlyAsync(1, timeout);
+        public Task AssertOnceAsync(TimeSpan timeout) => AssertExactlyAsync(1, timeout);
 
         public async Task AssertExactlyAsync(int exactly, TimeSpan timeout)
         {

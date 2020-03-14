@@ -29,7 +29,7 @@ namespace Socket.Io.Client.Core.Test
                     Assert.Equal("ack-response", m.FirstData);
                 });
                 
-                await called.AssertExactlyOnceAsync(TimeSpan.FromMilliseconds(100));
+                await called.AssertOnceAsync(TimeSpan.FromMilliseconds(100));
             }
 
             [Fact]
@@ -82,6 +82,73 @@ namespace Socket.Io.Client.Core.Test
                 {
                     messages.ForEach(m => m.Dispose());
                 }
+            }
+
+            [Fact]
+            public async Task Join_NewRoom_ShouldReceiveInitialRoomMessage()
+            {
+                using var client = CreateClient();
+
+                await client.OpenAsync(new Uri("http://localhost:3000"));
+
+                var roomWelcome = client.On("new-room").SubscribeCalled(e =>
+                {
+                    Assert.Equal("welcome", e.FirstData);
+                });
+                var roomJoined = client.Emit("join", "new-room").SubscribeCalled(e =>
+                {
+                    Assert.Equal("joined", e.FirstData);
+                });
+
+                await Task.WhenAll(
+                    roomJoined.AssertOnceAsync(TimeSpan.FromMilliseconds(100)),
+                    roomWelcome.AssertOnceAsync(TimeSpan.FromMilliseconds(100))
+                );
+            }
+
+            [Fact]
+            public async Task Join_TwoSockets_ShouldBothReceiveMessages()
+            {
+                using var clientA = CreateClient();
+                using var clientB = CreateClient();
+
+                string roomName = Guid.NewGuid().ToString("N");
+
+                await Task.WhenAll(
+                    clientA.OpenAsync(new Uri("http://localhost:3000")),
+                    clientB.OpenAsync(new Uri("http://localhost:3000")));
+
+                await Task.WhenAll(
+                    clientA.JoinRoomAsync(roomName),
+                    clientB.JoinRoomAsync(roomName));
+
+                bool aSending = true;
+                using var calledA = clientA.On(roomName).SubscribeCalled(e =>
+                {
+                    Assert.Equal(aSending ? "a-message" : "b-message", e.FirstData);
+                });
+                using var calledB = clientB.On(roomName).SubscribeCalled(e =>
+                {
+                    Assert.Equal(aSending ? "a-message" : "b-message", e.FirstData);
+                });
+
+                clientA.Emit(roomName, "a-message");
+                await Task.Delay(150);
+
+
+                await Task.WhenAll(
+                    calledA.AssertOnceAsync(TimeSpan.FromMilliseconds(50)),
+                    calledB.AssertOnceAsync(TimeSpan.FromMilliseconds(50))
+                );
+
+                aSending = false;
+
+                clientA.Emit(roomName, "b-message");
+
+                await Task.WhenAll(
+                    calledA.AssertExactlyAsync(2,TimeSpan.FromMilliseconds(50)),
+                    calledB.AssertExactlyAsync(2, TimeSpan.FromMilliseconds(50))
+                );
             }
         }
     }

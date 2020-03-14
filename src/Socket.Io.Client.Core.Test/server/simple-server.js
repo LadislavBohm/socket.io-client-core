@@ -19,6 +19,21 @@ io.on("connection", client => {
       callback("ack-response");
     }
   });
+  const rooms = {};
+  client.on("join", (data, callback) => {
+    if (!rooms[data]) {
+      rooms[data] = data;
+      client.on(data, message => {
+        console.log(`sending message to room ${data}`);
+        io.to(data).emit(data, message);
+      });
+    }
+    console.log("joining room", data);
+    client.join(data, () => {
+      io.to(data).emit(data, "welcome");
+      callback("joined");
+    });
+  });
 });
 
 const namespace = io.of("some-namespace");
