@@ -32,6 +32,7 @@ namespace Socket.Io.Client.Core
 
         private int _packetId = -1;
         private string _namespace;
+        private string _query;
         private HandshakeResponse _currentHandshake;
 
         private readonly IDictionary<EngineIoType, IPacketProcessor> _packetProcessors;
@@ -75,6 +76,7 @@ namespace Socket.Io.Client.Core
 
                 State = ReadyState.Opening;
                 _namespace = uri.LocalPath;
+                _query = string.IsNullOrEmpty(uri.Query) ? null : uri.Query.TrimStart('?');
                 var socketIoUri = uri.ToSocketIoWebSocketUri();
                 _socket = new WebsocketClient(socketIoUri) { MessageEncoding = Encoding, IsReconnectionEnabled = false };
                 _socket.DisconnectionHappened.Subscribe(OnDisconnect);
@@ -229,7 +231,11 @@ namespace Socket.Io.Client.Core
             if (!HasDefaultNamespace)
             {
                 Logger.LogDebug($"Sending connect to namespace: {_namespace}");
-                Send(CreatePacket(EngineIoType.Message, SocketIoType.Connect, null, null));
+
+                //we need to send query string with this packet
+                var query = string.IsNullOrEmpty(_query) ? null : _query;
+                var packet = new Packet(EngineIoType.Message, SocketIoType.Connect, _namespace, null, null, 0, query);
+                Send(packet);
             }
         }
 

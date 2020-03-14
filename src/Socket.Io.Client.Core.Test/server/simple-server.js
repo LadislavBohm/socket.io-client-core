@@ -9,7 +9,19 @@ const io = require("socket.io")(server, {
 
 io.on("connection", client => {
   console.log("client connected", client.id);
-  client.join("some-room");
+  console.log("query", client.handshake.query);
+  let roomId = client.handshake.query["roomId"];
+  if (roomId) {
+    console.log("joining user to room from query", roomId);
+    client.join(roomId, (data, callback) => {
+      client.on(data, message => {
+        console.log(`sending message to room ${roomId}`);
+        io.to(roomId).emit(data, message);
+      });
+      io.to(roomId).emit(roomId, "welcome");
+    });
+  }
+
   client.on("disconnect", () => {
     console.log("client disconnected", client.id);
   });
@@ -43,10 +55,6 @@ namespace.on("connection", client => {
 
 setInterval(() => {
   io.emit("broadcast-message", "broadcast-message");
-}, 25);
-
-setInterval(() => {
-  io.to("some-room").emit("room-message", "room-message");
 }, 25);
 
 setInterval(() => {

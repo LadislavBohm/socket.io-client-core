@@ -6,7 +6,7 @@ namespace Socket.Io.Client.Core.Extensions
 {
     internal static class UriExtensions
     {
-        internal static Uri ToSocketIoWebSocketUri(this Uri httpUri, string eio = "3", string path = "", IDictionary<string, string> queryParameters = null)
+        internal static Uri ToSocketIoWebSocketUri(this Uri httpUri, string eio = "3", string path = "")
         {
             var builder = new StringBuilder();
             builder.Append(httpUri.Scheme == "https" || httpUri.Scheme == "wss" ? "wss://" : "ws://");
@@ -23,17 +23,12 @@ namespace Socket.Io.Client.Core.Extensions
                 .Append(eio)
                 .Append("&transport=websocket");
 
-            if (queryParameters != null)
+            if (!string.IsNullOrEmpty(httpUri.Query))
             {
-                foreach (var item in queryParameters)
-                {
-                    builder
-                        .Append("&")
-                        .Append(item.Key)
-                        .Append("=")
-                        .Append(item.Value);
-                }
+                builder.Append("&");
+                builder.Append(httpUri.Query.TrimStart('?'));
             }
+            
             return new Uri(builder.ToString());
         }
     }

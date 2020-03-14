@@ -96,6 +96,20 @@ namespace Socket.Io.Client.Core.Test
 
                 await called.AssertAtLeastAsync(3, TimeSpan.FromMilliseconds(100));
             }
+
+            [Fact]
+            public async Task WithQuery_ShouldPassQueryWithConnect()
+            {
+                using var client = CreateClient();
+                var called = client.On("test-room").SubscribeCalled(e =>
+                {
+                    Assert.Equal("welcome", e.FirstData);
+                });
+
+                await client.OpenAsync(new Uri("http://localhost:3000/some-namespace?roomId=test-room"));
+
+                await called.AssertOnceAsync(TimeSpan.FromMilliseconds(100));
+            }
         }
     }
 }
