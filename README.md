@@ -1,4 +1,6 @@
-![Logo](socket-io-logo.png)
+<!-- <img src="socket-io-logo.png" alt="logo"> -->
+
+![](socket-io-logo.png)
 
 # Socket.IO client in .NET Core
 
