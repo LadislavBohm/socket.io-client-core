@@ -18,7 +18,7 @@ namespace Socket.Io.Client.Core.Extensions
             }
 
             builder
-                .Append(string.IsNullOrWhiteSpace(path) ? "/socket.io" : path)
+                .Append(string.IsNullOrWhiteSpace(path) ? SocketIo.DefaultPath : PrefixPath(path))
                 .Append("/?EIO=")
                 .Append(eio)
                 .Append("&transport=websocket");
@@ -31,5 +31,7 @@ namespace Socket.Io.Client.Core.Extensions
             
             return new Uri(builder.ToString());
         }
+
+        private static string PrefixPath(string path) => path.StartsWith("/") ? path : $"/{path}";
     }
 }

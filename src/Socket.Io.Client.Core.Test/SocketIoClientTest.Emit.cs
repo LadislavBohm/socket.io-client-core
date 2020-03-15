@@ -23,7 +23,7 @@ namespace Socket.Io.Client.Core.Test
             {
                 using var client = CreateClient();
 
-                await client.OpenAsync(new Uri("http://localhost:3000"));
+                await client.OpenTestAsync();
                 using var called = client.Emit("ack-message").SubscribeCalled(m =>
                 {
                     Assert.Equal("ack-response", m.FirstData);
@@ -37,7 +37,7 @@ namespace Socket.Io.Client.Core.Test
             {
                 using var client = CreateClient();
 
-                await client.OpenAsync(new Uri("http://localhost:3000"));
+                await client.OpenTestAsync();
                 var messages = new List<Called<AckMessageEvent>>();
                 try
                 {
@@ -63,7 +63,7 @@ namespace Socket.Io.Client.Core.Test
             {
                 using var client = CreateClient();
 
-                await client.OpenAsync(new Uri("http://localhost:3000"));
+                await client.OpenTestAsync();
                 var messages = new List<Called<AckMessageEvent>>();
                 try
                 {
@@ -89,7 +89,7 @@ namespace Socket.Io.Client.Core.Test
             {
                 using var client = CreateClient();
 
-                await client.OpenAsync(new Uri("http://localhost:3000"));
+                await client.OpenTestAsync();
 
                 var roomWelcome = client.On("new-room").SubscribeCalled(e =>
                 {
@@ -115,8 +115,8 @@ namespace Socket.Io.Client.Core.Test
                 string roomName = Guid.NewGuid().ToString("N");
 
                 await Task.WhenAll(
-                    clientA.OpenAsync(new Uri("http://localhost:3000")),
-                    clientB.OpenAsync(new Uri("http://localhost:3000")));
+                    clientA.OpenTestAsync(),
+                    clientB.OpenTestAsync());
 
                 await Task.WhenAll(
                     clientA.JoinRoomAsync(roomName),

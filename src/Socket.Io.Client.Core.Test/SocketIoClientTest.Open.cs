@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Socket.Io.Client.Core.Model;
 using Socket.Io.Client.Core.Model.SocketIo;
 using Socket.Io.Client.Core.Test.Extensions;
 using Socket.Io.Client.Core.Test.Model;
@@ -29,7 +30,7 @@ namespace Socket.Io.Client.Core.Test
                 using var client = CreateClient();
 
                 using var called = client.Events.OnHandshake.SubscribeCalled();
-                await client.OpenAsync(new Uri("http://localhost:3000"));
+                await client.OpenTestAsync();
 
                 await called.AssertAtLeastOnceAsync(TimeSpan.FromMilliseconds(100));
                 Assert.Equal(ReadyState.Open, client.State);
@@ -45,7 +46,7 @@ namespace Socket.Io.Client.Core.Test
                 using var pong = client.Events.OnPong.SubscribeCalled();
                 using var probeError = client.Events.OnProbeError.SubscribeCalled();
                 
-                await client.OpenAsync(new Uri("http://localhost:3000"));
+                await client.OpenTestAsync();
 
                 await pong.AssertAtLeastOnceAsync(TimeSpan.FromMilliseconds(100));
                 probeError.AssertNever();
@@ -58,7 +59,7 @@ namespace Socket.Io.Client.Core.Test
                 using var called = client.Events.OnPong.SubscribeCalled();
                 using var probeError = client.Events.OnProbeError.SubscribeCalled();
                 
-                await client.OpenAsync(new Uri("http://localhost:3000"));
+                await client.OpenTestAsync();
 
                 //ping interval is set to 50ms
                 await called.AssertAtLeastAsync(5, TimeSpan.FromMilliseconds(300));
@@ -76,7 +77,7 @@ namespace Socket.Io.Client.Core.Test
                     Assert.Equal("namespace-message", m.FirstData);
                 });
 
-                await client.OpenAsync(new Uri("http://localhost:3000/"));
+                await client.OpenTestAsync();
 
                 await called.AssertNeverAsync(TimeSpan.FromMilliseconds(100));
             }
@@ -92,7 +93,7 @@ namespace Socket.Io.Client.Core.Test
                     Assert.Equal("namespace-message", m.FirstData);
                 });
 
-                await client.OpenAsync(new Uri("http://localhost:3000/some-namespace"));
+                await client.OpenTestAsync(new Uri("http://localhost:3000/some-namespace"));
 
                 await called.AssertAtLeastAsync(3, TimeSpan.FromMilliseconds(100));
             }
@@ -106,7 +107,7 @@ namespace Socket.Io.Client.Core.Test
                     Assert.Equal("welcome", e.FirstData);
                 });
 
-                await client.OpenAsync(new Uri("http://localhost:3000/some-namespace?roomId=test-room"));
+                await client.OpenTestAsync(new Uri("http://localhost:3000/some-namespace?roomId=test-room"));
 
                 await called.AssertOnceAsync(TimeSpan.FromMilliseconds(100));
             }

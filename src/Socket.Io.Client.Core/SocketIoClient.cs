@@ -22,7 +22,7 @@ using Websocket.Client;
 
 namespace Socket.Io.Client.Core
 {
-    public partial class SocketIoClient : IDisposable, ISocketIoClient
+    public partial class SocketIoClient : ISocketIoClient
     {
         private IWebsocketClient _socket;
 
@@ -66,7 +66,7 @@ namespace Socket.Io.Client.Core
 
         #region Public Methods
 
-        public async Task OpenAsync(Uri uri)
+        public async Task OpenAsync(Uri uri, SocketIoOpenOptions options = null)
         {
             ThrowIfStarted();
 
@@ -77,7 +77,7 @@ namespace Socket.Io.Client.Core
                 State = ReadyState.Opening;
                 _namespace = uri.LocalPath;
                 _query = string.IsNullOrEmpty(uri.Query) ? null : uri.Query.TrimStart('?');
-                var socketIoUri = uri.ToSocketIoWebSocketUri();
+                var socketIoUri = uri.ToSocketIoWebSocketUri(path: options?.Path);
                 _socket = new WebsocketClient(socketIoUri) { MessageEncoding = Encoding, IsReconnectionEnabled = false };
                 _socket.DisconnectionHappened.Subscribe(OnDisconnect);
                 
