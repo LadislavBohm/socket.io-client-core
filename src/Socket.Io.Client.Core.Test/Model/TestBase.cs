@@ -7,14 +7,14 @@ namespace Socket.Io.Client.Core.Test.Model
 {
     public abstract class TestBase
     {
-        private readonly ITestOutputHelper _testOutputHelper;
+        protected readonly ITestOutputHelper TestOutputHelper;
 
         protected TestBase(ITestOutputHelper testOutputHelper)
         {
-            _testOutputHelper = testOutputHelper;
+            TestOutputHelper = testOutputHelper;
         }
 
-        protected ILogger<T> CreateLogger<T>(LogLevel minLogLevel = LogLevel.Trace) => new XUnitLogger<T>(_testOutputHelper, minLogLevel);
+        protected ILogger<T> CreateLogger<T>(LogLevel minLogLevel = LogLevel.Trace) => new XUnitLogger<T>(TestOutputHelper, minLogLevel);
 
         protected SocketIoClient CreateClient(LogLevel minLogLevel = LogLevel.Debug)
         {

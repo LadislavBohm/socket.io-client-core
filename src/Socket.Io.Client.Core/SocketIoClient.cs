@@ -35,12 +35,15 @@ namespace Socket.Io.Client.Core
         private string _query;
         private HandshakeResponse _currentHandshake;
 
+        private bool _disposed = false;
+
         private readonly IDictionary<EngineIoType, IPacketProcessor> _packetProcessors;
         private readonly ConcurrentQueue<Packet> _sentPingPackets = new ConcurrentQueue<Packet>();
 
         public SocketIoClient(SocketIoClientOptions options = null)
         {
             Options = options ?? new SocketIoClientOptions();
+            Events = new SocketIoEvents();
             _packetProcessors = new Dictionary<EngineIoType, IPacketProcessor>
             {
                 { EngineIoType.Open, new OpenPacketProcessor(this, Logger) },
@@ -59,7 +62,7 @@ namespace Socket.Io.Client.Core
 
         #endregion
 
-        public SocketIoEvents Events { get; } = new SocketIoEvents();
+        public SocketIoEvents Events { get; private set; }
         public SocketIoClientOptions Options { get; }
         public bool IsRunning => _socket?.IsRunning ?? false;
         public ReadyState State { get; private set; } = ReadyState.Closed;
@@ -79,7 +82,6 @@ namespace Socket.Io.Client.Core
                 _query = string.IsNullOrEmpty(uri.Query) ? null : uri.Query.TrimStart('?');
                 var socketIoUri = uri.ToSocketIoWebSocketUri(path: options?.Path);
                 _socket = new WebsocketClient(socketIoUri) { MessageEncoding = Encoding, IsReconnectionEnabled = false };
-                _socket.DisconnectionHappened.Subscribe(OnDisconnect);
                 
                 Events.HandshakeSubject.Subscribe(OnHandshake);
                 Events.OnPong.Subscribe(OnPong);
@@ -90,8 +92,9 @@ namespace Socket.Io.Client.Core
                 State = ReadyState.Open;
                 Logger.LogInformation("Socket connection successfully established.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.LogError(ex, "Error while starting socket.");
                 State = ReadyState.Closed;
                 throw;
             }
@@ -106,10 +109,24 @@ namespace Socket.Io.Client.Core
             try
             {
                 State = ReadyState.Closing;
+
+                //don't receive anything from underlying socket anymore
+                _pingPongSubscription.Dispose();
+                _messageSubscription.Dispose();
+                _disconnectSubscription.Dispose();
+                
+                //clean anything set during socket startup/run time
                 _packetId = -1;
                 _currentHandshake = null;
                 _sentPingPackets.Clear();
+
+                //finally stop the socket
                 await _socket.StopOrFail(WebSocketCloseStatus.NormalClosure, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error while stopping socket.");
+                throw;
             }
             finally
             {
@@ -258,13 +275,7 @@ namespace Socket.Io.Client.Core
                 Logger.LogWarning($"No corresponding PING packet found for PONG: {pong}");
             }
         }
-
-        private void OnDisconnect(DisconnectionInfo info)
-        {
-            Logger.LogWarning(info.Exception,
-                $"Underlying socket has disconnected. Type: {info.Type}, Status: {info.CloseStatus}, Description: {info.CloseStatusDescription}");
-        }
-
+        
         private void Send(Packet packet)
         { 
             ThrowIfNotRunning();
@@ -281,13 +292,32 @@ namespace Socket.Io.Client.Core
 
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
             Logger.LogInformation("Disposing socket.");
-            
-            Events?.Dispose();
-            _pingPongSubscription?.Dispose();
-            _disconnectSubscription?.Dispose();
-            _messageSubscription?.Dispose();
-            _socket?.Dispose();
+            if (disposing)
+            {
+                //first dispose ping/pong and message subscriptions because we don't want to receive those now
+                _pingPongSubscription?.Dispose();
+                _messageSubscription?.Dispose();
+
+                //dispose socket so it fires disconnect event
+                _socket?.Dispose();
+
+                //now dispose disconnect once socket it disposed
+                _disconnectSubscription?.Dispose();
+
+                //dispose all events because user should not keep subscriptions or create new ones
+                Events?.Dispose();
+            }
+
+            _disposed = true;
         }
     }
 }

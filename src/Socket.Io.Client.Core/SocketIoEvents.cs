@@ -34,6 +34,32 @@ namespace Socket.Io.Client.Core
         public IObservable<ProbeErrorEvent> OnProbeError => ProbeErrorSubject.AsObservable();
         public IObservable<Unit> OnConnect => ConnectSubject.AsObservable();
 
+        /// <summary>
+        /// Completes all observables in this instance.
+        /// </summary>
+        internal void Complete()
+        {
+            var subjects = typeof(SocketIoEvents).GetProperties(BindingFlags.Instance | BindingFlags.NonPublic)
+                .Where(p =>
+                    p.PropertyType.IsGenericType &&
+                    p.PropertyType.GetGenericTypeDefinition() == typeof(ISubject<>))
+                .Select(p => p.GetValue(this))
+                .ToList();
+
+            var method = typeof(ISubject<>).GetMethod(nameof(ISubject<object>.OnCompleted));
+            if (method == null)
+                throw new ArgumentNullException($"Could not find {nameof(ISubject<object>.OnCompleted)} method via reflection.");
+
+            foreach (object subject in subjects)
+            {
+                method.Invoke(subject, null);
+            }
+        }
+
+
+        /// <summary>
+        /// Disposes all observables in this instance.
+        /// </summary>
         public void Dispose()
         {
             var subjects = typeof(SocketIoEvents).GetProperties(BindingFlags.Instance | BindingFlags.NonPublic)

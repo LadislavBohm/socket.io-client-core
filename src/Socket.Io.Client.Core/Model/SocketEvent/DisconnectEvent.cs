@@ -7,10 +7,9 @@ namespace Socket.Io.Client.Core.Model.SocketEvent
 {
     public class DisconnectEvent
     {
-        public DisconnectEvent(WebSocketCloseStatus? closeStatus, string closeStatusDescription)
+        public DisconnectEvent(string reason)
         {
-            CloseStatus = closeStatus;
-            CloseStatusDescription = closeStatusDescription;
+            Reason = reason;
         }
 
         public DisconnectEvent(Exception exception)
@@ -18,16 +17,22 @@ namespace Socket.Io.Client.Core.Model.SocketEvent
             Exception = exception;
         }
 
-        public DisconnectEvent(WebSocketCloseStatus? closeStatus, string closeStatusDescription, Exception exception)
+        public DisconnectEvent(WebSocketCloseStatus? closeStatus, string reason)
         {
             CloseStatus = closeStatus;
-            CloseStatusDescription = closeStatusDescription;
+            Reason = reason;
+        }
+
+        public DisconnectEvent(WebSocketCloseStatus? closeStatus, string reason, Exception exception)
+        {
+            CloseStatus = closeStatus;
+            Reason = reason;
             Exception = exception;
         }
 
         public WebSocketCloseStatus? CloseStatus { get; }
 
-        public string CloseStatusDescription { get; }
+        public string Reason { get; }
 
         public Exception Exception { get; }
     }

@@ -9,7 +9,8 @@ const io = require("socket.io")(server, {
 
 io.on("connection", client => {
   console.log("client connected", client.id);
-  console.log("query", client.handshake.query);
+
+  //handle 'roomId' parameter and join user to room if it's present
   let roomId = client.handshake.query["roomId"];
   if (roomId) {
     console.log("joining user to room from query", roomId);
@@ -22,15 +23,20 @@ io.on("connection", client => {
     });
   }
 
+  //log users that disconnect
   client.on("disconnect", () => {
     console.log("client disconnected", client.id);
   });
+
+  //handle ACK message and send user response via ACK callback
   client.on("ack-message", callback => {
     console.log("received ack-message, responding ack-response");
     if (callback) {
       callback("ack-response");
     }
   });
+
+  //handle join emit and join user to a room
   const rooms = {};
   client.on("join", (data, callback) => {
     if (!rooms[data]) {
@@ -45,6 +51,12 @@ io.on("connection", client => {
       io.to(data).emit(data, "welcome");
       callback("joined");
     });
+  });
+
+  //handle 'disconnect-me' message and send disconnect packet to user
+  client.on("disconnect-me", () => {
+    console.log(`disconnecting ${client.id} based on 'disconnect-me' emit.`);
+    client.disconnect();
   });
 });
 

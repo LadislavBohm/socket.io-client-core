@@ -1,4 +1,5 @@
 using System;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Socket.Io.Client.Core.Model;
 using Socket.Io.Client.Core.Model.SocketIo;
@@ -32,9 +33,9 @@ namespace Socket.Io.Client.Core.Test
                 using var called = client.Events.OnHandshake.SubscribeCalled();
                 await client.OpenTestAsync();
 
-                await called.AssertAtLeastOnceAsync(TimeSpan.FromMilliseconds(100));
+                await called.AssertAtLeastOnceAsync(TimeSpan.FromMilliseconds(150));
                 Assert.Equal(ReadyState.Open, client.State);
-                
+
                 await client.CloseAsync();
                 Assert.Equal(ReadyState.Closed, client.State);
             }
@@ -45,7 +46,7 @@ namespace Socket.Io.Client.Core.Test
                 using var client = CreateClient();
                 using var pong = client.Events.OnPong.SubscribeCalled();
                 using var probeError = client.Events.OnProbeError.SubscribeCalled();
-                
+
                 await client.OpenTestAsync();
 
                 await pong.AssertAtLeastOnceAsync(TimeSpan.FromMilliseconds(100));
@@ -58,11 +59,11 @@ namespace Socket.Io.Client.Core.Test
                 using var client = CreateClient();
                 using var called = client.Events.OnPong.SubscribeCalled();
                 using var probeError = client.Events.OnProbeError.SubscribeCalled();
-                
+
                 await client.OpenTestAsync();
 
                 //ping interval is set to 50ms
-                await called.AssertAtLeastAsync(5, TimeSpan.FromMilliseconds(300));
+                await called.AssertAtLeastAsync(5, TimeSpan.FromMilliseconds(400));
                 probeError.AssertNever();
             }
 
@@ -109,6 +110,21 @@ namespace Socket.Io.Client.Core.Test
 
                 await client.OpenTestAsync(new Uri("http://localhost:3000/some-namespace?roomId=test-room"));
 
+                await called.AssertOnceAsync(TimeSpan.FromMilliseconds(100));
+            }
+
+            [Fact]
+            public async Task Disconnect_ShouldCloseSocket()
+            {
+                using var client = CreateClient();
+                using var called = client.Events.OnDisconnect.SubscribeCalled();
+
+                await client.OpenTestAsync();
+
+                //wait for disconnect ACK just to verify it's working
+                _ = client.Emit("disconnect-me");
+
+                //wait for handling of the disconnect by the socket
                 await called.AssertOnceAsync(TimeSpan.FromMilliseconds(100));
             }
         }

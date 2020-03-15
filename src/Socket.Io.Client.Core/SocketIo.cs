@@ -9,11 +9,5 @@ namespace Socket.Io.Client.Core
     {
         public const string DefaultNamespace = "/";
         public const string DefaultPath = "/socket.io";
-
-        internal static class Event
-        {
-            internal static IDictionary<SocketIoEvent, string> Name { get; } =
-                Enum.GetValues(typeof(SocketIoEvent)).OfType<SocketIoEvent>().ToDictionary(e => e, e => e.ToString());
-        }
     }
 }
