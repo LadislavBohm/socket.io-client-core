@@ -41,7 +41,8 @@ namespace Socket.Io.Client.Core.Processing
                     ProcessDisconnect(packet);
                     break;
                 case SocketIoType.Error:
-                    throw new NotImplementedException();
+                    ProcessError(packet);
+                    break;
                 case SocketIoType.BinaryEvent:
                 case SocketIoType.BinaryAck:
                     throw new NotSupportedException();
@@ -99,6 +100,12 @@ namespace Socket.Io.Client.Core.Processing
                 _logger.LogError(ex, $"Error while processing disconnect packet. Packet: {packet}");
                 _client.Events.DisconnectSubject.OnError(ex);
             }
+        }
+
+        private void ProcessError(Packet packet)
+        {
+            _logger.LogWarning($"Received error packet from server. Data: {packet.Data}");
+            _client.Events.ErrorSubject.OnNext(new ErrorEvent(packet.Data));
         }
     }
 }
