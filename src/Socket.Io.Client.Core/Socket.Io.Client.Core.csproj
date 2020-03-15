@@ -12,6 +12,9 @@
     <RepositoryUrl>https://github.com/LadislavBohm/socket.io-client-core</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>socketio socket-io socket.io websocket socket websocketclient clientwebsocket</PackageTags>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
