@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Description>High-performance C# client for socket.io version 2.0.</Description>
+    <Description>High-performance C# client for socket.io using Rx.Net.</Description>
     <Authors>Ladislav Böhm</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Copyright></Copyright>
@@ -12,9 +12,10 @@
     <RepositoryUrl>https://github.com/LadislavBohm/socket.io-client-core</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>socketio socket-io socket.io websocket socket websocketclient clientwebsocket</PackageTags>
-    <AssemblyVersion>1.0.1.0</AssemblyVersion>
-    <FileVersion>1.0.1.0</FileVersion>
-    <Version>1.0.1</Version>
+    <AssemblyVersion>1.0.2.0</AssemblyVersion>
+    <FileVersion>1.0.2.0</FileVersion>
+    <Version>1.0.2</Version>
+    <PackageReleaseNotes>handles more packet types</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
