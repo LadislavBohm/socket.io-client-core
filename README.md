@@ -22,6 +22,9 @@ PM> Install-Package Socket.Io.Client.Core
 
 For more examples see [test project](https://github.com/LadislavBohm/socket.io-client-core/tree/master/src/Socket.Io.Client.Core.Test).
 
+Real-world example can be found in my other repository - Crypto Compare streamer API client:
+https://github.com/LadislavBohm/cryptocompare-streamer
+
 ### Open/Close Connection
 
 ```csharp
