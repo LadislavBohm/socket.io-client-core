@@ -105,6 +105,8 @@ namespace Socket.Io.Client.Core.Processing
         private void ProcessError(Packet packet)
         {
             _logger.LogWarning($"Received error packet from server. Data: {packet.Data}");
+
+            //probably don't deserialize here because we don't know how data object might look like or if it even is an object
             _client.Events.ErrorSubject.OnNext(new ErrorEvent(packet.Data));
         }
     }

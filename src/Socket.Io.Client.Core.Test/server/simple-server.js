@@ -58,6 +58,13 @@ io.on("connection", client => {
     console.log(`disconnecting ${client.id} based on 'disconnect-me' emit.`);
     client.disconnect();
   });
+
+  //handle 'emit-error' to simulate error packet to client
+  client.on("emit-error", callback => {
+    console.log(`emitting error-message error packet to client ${client.id}`);
+    client.error({ message: "error-message" });
+    callback("error ack");
+  });
 });
 
 const namespace = io.of("some-namespace");

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Socket.Io.Client.Core.Model.SocketEvent;
@@ -149,6 +150,23 @@ namespace Socket.Io.Client.Core.Test
                     calledA.AssertExactlyAsync(2,TimeSpan.FromMilliseconds(50)),
                     calledB.AssertExactlyAsync(2, TimeSpan.FromMilliseconds(50))
                 );
+            }
+
+            [Fact]
+            public async Task ErrorPacket_ShouldReceiveErrorEvent()
+            {
+                using var client = CreateClient();
+
+                var called = client.Events.OnError.SubscribeCalled(m =>
+                {
+                    //we could deserialize to some class here but it's up to client to handle server error objects
+                    Assert.Contains("error-message", m.Description);
+                });
+
+                await client.OpenTestAsync();
+
+                await client.Emit("emit-error");
+                called.AssertOnce();
             }
         }
     }
