@@ -23,7 +23,7 @@ namespace Socket.Io.Client.Core.Test
             {
                 using var client = CreateClient();
 
-                await client.OpenAsync(new Uri("http://localhost:3000"));
+                await client.OpenTestAsync();
                 using var called = client.On("broadcast-message").SubscribeCalled(m =>
                 {
                     Assert.Equal("broadcast-message", m.FirstData);
@@ -37,7 +37,7 @@ namespace Socket.Io.Client.Core.Test
             {
                 using var client = CreateClient();
 
-                await client.OpenAsync(new Uri("http://localhost:3000"));
+                await client.OpenTestAsync();
 
                 var called = new List<Called<EventMessageEvent>>();
                 try

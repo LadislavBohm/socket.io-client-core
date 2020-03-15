@@ -5,15 +5,14 @@ using Socket.Io.Client.Core.Model.SocketEvent;
 
 namespace Socket.Io.Client.Core
 {
-    public interface ISocketIoClient
+    public interface ISocketIoClient : IDisposable
     {
         SocketIoEvents Events { get; }
         bool IsRunning { get; }
         SocketIoClientOptions Options { get; }
 
-        Task OpenAsync(Uri uri);
+        Task OpenAsync(Uri uri, SocketIoOpenOptions options = null);
         Task CloseAsync();
-        void Dispose();
 
         IObservable<AckMessageEvent> Emit(string eventName);
         IObservable<AckMessageEvent> Emit<TData>(string eventName, TData data);

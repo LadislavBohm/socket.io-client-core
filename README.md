@@ -1,10 +1,8 @@
-<!-- <img src="socket-io-logo.png" alt="logo"> -->
-
 ![](socket-io-logo.png)
 
 # socket.io client written in C&#35;
 
-High-performance C# client for socket.io version 2.0. Flexibility achieved via [Reactive Extensions](https://github.com/dotnet/reactive#reactive-extensions) and optional configuration. Built on top of .NET Standard 2.1.
+High-performance C# client for socket.io. Flexibility achieved via [Reactive Extensions](https://github.com/dotnet/reactive#reactive-extensions) and optional configurations. Built on top of .NET Standard 2.1.
 
 ## Installation
 
@@ -29,7 +27,10 @@ For more examples see [test project](https://github.com/LadislavBohm/socket.io-c
 ```csharp
 //socket is disposed using new "using" syntax, don't forget to dispose it!
 using var client = new SocketIoClient();
-await client.OpenAsync(new Uri("http://localhost:3000"));
+//optionally supply additional parameters using OpenOptions
+var options = new SocketIoOpenOptions("custom-path");
+
+await client.OpenAsync(new Uri("http://localhost:3000"), options);
 await client.CloseAsync();
 ```
 
@@ -130,7 +131,6 @@ using var client = new SocketIoClient(options);
 ## To-do
 
 - Binary data (no support yet)
-- Handle URL query parameters
 - Implement automatic reconnection (you can do it by yourself using currently available events)
 - Document source code
 

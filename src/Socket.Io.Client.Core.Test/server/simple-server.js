@@ -1,6 +1,6 @@
 const server = require("http").createServer();
 const io = require("socket.io")(server, {
-  path: "/",
+  path: "/some-path",
   serveClient: false,
   pingInterval: 50,
   pingTimeout: 400,
