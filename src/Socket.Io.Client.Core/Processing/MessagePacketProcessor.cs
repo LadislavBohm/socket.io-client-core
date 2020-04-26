@@ -58,7 +58,7 @@ namespace Socket.Io.Client.Core.Processing
         {
             try
             {
-                var eventArray = JsonSerializer.Deserialize<string[]>(packet.Data);
+                var eventArray = _client.Options.JsonSerializer.Deserialize<string[]>(packet.Data);
                 if (eventArray != null && eventArray.Length > 0)
                 {
                     if (packet.Id.HasValue && _logger.IsEnabled(LogLevel.Debug))
