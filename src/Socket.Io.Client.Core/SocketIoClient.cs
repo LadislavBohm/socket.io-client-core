@@ -320,4 +320,17 @@ namespace Socket.Io.Client.Core
             _disposed = true;
         }
     }
+    
+#if NETSTANDARD_2_0
+    public static class ConcurrentQueueExtensions
+    {
+        public static void Clear<T>(this ConcurrentQueue<T> queue)
+        {
+            while (queue.Count > 0)
+            {
+                queue.TryDequeue(out var _);
+            }
+        }
+    }
+#endif
 }

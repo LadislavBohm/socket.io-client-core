@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+#if NETSTANDARD_2_0
+using System.Linq;
+#endif
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -74,7 +77,13 @@ namespace Socket.Io.Client.Core.Processing
                         //we can have zero, one or multiple arguments after event name so emit based on number of them
                         var message = eventArray.Length == 1
                             ? new EventMessageEvent(eventArray[0], new List<string>())
-                            : new EventMessageEvent(eventArray[0], eventArray[1..]);
+                            : new EventMessageEvent(eventArray[0],
+                                #if NETSTANDARD_2_0
+                                eventArray.Skip(1).ToArray()
+                                #else
+                                eventArray[1..]
+                                #endif
+                            );
                         _client.Events.EventMessageSubject.OnNext(message);
                     }
                 }

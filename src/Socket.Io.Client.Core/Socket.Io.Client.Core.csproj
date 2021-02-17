@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFrameworks>netstandard2.1;netstandard2.0</TargetFrameworks>
     <Description>High-performance C# client for socket.io using Rx.Net.</Description>
     <Authors>Ladislav Böhm</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -16,10 +16,20 @@
     <FileVersion>1.0.3.0</FileVersion>
     <Version>1.0.3</Version>
     <PackageReleaseNotes>handles more packet types</PackageReleaseNotes>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
+    <DefineConstants>NETSTANDARD_2_0</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
+    <DefineConstants>NETSTANDARD_2_1</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
+    <PackageReference Include="System.Memory" Version="4.5.4" />
     <PackageReference Include="System.Reactive" Version="4.3.2" />
     <PackageReference Include="Utf8Json" Version="1.3.7" />
     <PackageReference Include="Websocket.Client" Version="4.2.3" />
