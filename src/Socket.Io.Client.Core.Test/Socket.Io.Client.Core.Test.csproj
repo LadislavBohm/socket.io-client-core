@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+<!-- uncomment a specific framework to force testing under it -->
     <TargetFramework>netcoreapp3.1</TargetFramework>
+<!--    <TargetFramework>netcoreapp2.1</TargetFramework>-->
+<!--    <TargetFramework>net462</TargetFramework>-->
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
