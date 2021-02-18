@@ -26,7 +26,7 @@ namespace Socket.Io.Client.Core.Test
                 await client.OpenTestAsync();
                 using var called = client.On("broadcast-message").SubscribeCalled(m =>
                 {
-                    Assert.Equal("broadcast-message", m.FirstData);
+                    Assert.Equal("broadcast-message", m.Data[0].ToString());
                 });
 
                 await called.AssertAtLeastAsync(4, TimeSpan.FromMilliseconds(150));
@@ -46,7 +46,7 @@ namespace Socket.Io.Client.Core.Test
                     {
                         called.Add(client.On("broadcast-message").SubscribeCalled(m =>
                         {
-                            Assert.Equal("broadcast-message", m.FirstData);
+                            Assert.Equal("broadcast-message", m.Data[0].ToString());
                         }));
                     }
 

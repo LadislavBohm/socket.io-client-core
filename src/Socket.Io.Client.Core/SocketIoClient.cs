@@ -7,6 +7,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -57,7 +58,7 @@ namespace Socket.Io.Client.Core
 
         private bool HasDefaultNamespace => string.IsNullOrEmpty(_namespace) || _namespace == SocketIo.DefaultNamespace;
         private ILogger<SocketIoClient> Logger => Options.Logger;
-        private IJsonSerializer Json => Options.JsonSerializer;
+        private JsonSerializerOptions JsonOptions => Options.JsonSerializerOptions;
         private Encoding Encoding => Options.Encoding;
 
         #endregion
@@ -151,7 +152,7 @@ namespace Socket.Io.Client.Core
             if (data != null)
             {
                 sb.Append(",");
-                sb.Append(Json.Serialize(data));
+                sb.Append(JsonSerializer.Serialize(data, JsonOptions));
             }
 
             sb.Append("]");
@@ -231,8 +232,12 @@ namespace Socket.Io.Client.Core
             }
             finally
             {
+                var pingInterval = _currentHandshake.PingInterval == 0
+                    ? SocketIo.DefaultPingInterval
+                    : _currentHandshake.PingInterval;
+
                 _pingPongSubscription = Observable
-                    .Interval(TimeSpan.FromMilliseconds(_currentHandshake.PingInterval))
+                    .Interval(TimeSpan.FromMilliseconds(pingInterval))
                     .Subscribe(i =>
                     {
                         Logger.LogDebug("Sending PING packet");

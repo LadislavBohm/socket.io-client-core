@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json;
 
 namespace Socket.Io.Client.Core.Model.SocketEvent
 {
     public class AckMessageEvent : MessageEvent
     {
-        public AckMessageEvent(int ack, IReadOnlyList<string> data) : base(data)
+        public AckMessageEvent(int ack, IReadOnlyList<JsonElement> data) : base(data)
         {
             Ack = ack;
         }

@@ -9,5 +9,7 @@ namespace Socket.Io.Client.Core
     {
         public const string DefaultNamespace = "/";
         public const string DefaultPath = "/socket.io";
+        public const int DefaultPingTimeout = 5000;
+        public const int DefaultPingInterval = 25000;
     }
 }

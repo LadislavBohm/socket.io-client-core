@@ -37,7 +37,7 @@ namespace Socket.Io.Client.Core.Parse
 
         internal static bool TryDecode(ReadOnlyMemory<byte> data, Encoding encoding, out Packet packet)
         {
-            packet = null;
+            packet = default;
             if (data.IsEmpty) return false;
 
             string dataString = encoding.GetString(data.Span);
@@ -46,7 +46,7 @@ namespace Socket.Io.Client.Core.Parse
 
         internal static bool TryDecode(string data, out Packet packet)
         {
-            packet = null;
+            packet = default;
             if (string.IsNullOrEmpty(data)) return false;
 
             var span = data.AsSpan();

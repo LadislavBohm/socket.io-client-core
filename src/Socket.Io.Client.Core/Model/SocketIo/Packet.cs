@@ -2,14 +2,8 @@
 
 namespace Socket.Io.Client.Core.Model.SocketIo
 {
-    public class Packet
+    public readonly struct Packet
     {
-        internal Packet(EngineIoType engineIoType, SocketIoType? socketIoType)
-        {
-            EngineIoType = engineIoType;
-            SocketIoType = socketIoType;
-        }
-
         public Packet(EngineIoType engineIoType, SocketIoType? socketIoType, string ns, string data, int? id, int attachments, string query)
         {
             Id = id;
