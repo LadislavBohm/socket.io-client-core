@@ -13,7 +13,6 @@ namespace Socket.Io.Client.Core.Model.SocketEvent
             Ack = ack;
         }
 
-        [IgnoreDataMember]
         internal int Ack { get; }
     }
 }

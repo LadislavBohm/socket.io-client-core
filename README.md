@@ -23,6 +23,8 @@ PM> Install-Package Socket.Io.Client.Core
 - 1.1.0
   - moved from Utf8Json to System.Text.Json (<b>breaking change</b>)
   - fixed parsing of multiple arguments where some of them were not JSON serialized
+- 1.2.0
+  - added support for event message acknowledgements
 
 ## Examples
 
@@ -107,6 +109,28 @@ await client.OpenAsync(new Uri("http://localhost:3000"));
 someEventSubscription.Dispose();
 ```
 
+### Acknowledgements
+
+You can optionally send ACK to server when you receive a message. There is also option to send any data back to server.
+
+```csharp
+using var client = new SocketIoClient();
+
+client.On("messages").Subscribe(e =>
+{
+    //always check before calling acknowledgement
+    if (e.SupportsAcknowledge)
+    {
+        //without any data
+        e.Acknowledge();
+
+        //OR with any optional serializable data
+        e.Acknowledge("message has been processed");
+    }
+});
+
+```
+
 ### Emit message to server
 
 All emitted messages have an optional callback (acknowledgement) possible via subscribing to the result of Emit method.
@@ -123,7 +147,7 @@ client.Emit("some-event", new {data = "some-data"}); //object data
 //it is always called only once, no need to unsubscribe/dispose
 client.Emit("some-event", "some-data").Subscribe(ack =>
 {
-    Console.WriteLine($"Callback with data: {ack.FirstData}.");
+    Console.WriteLine($"Callback with data: {ack.Data[0]}.");
 });
 ```
 

@@ -88,9 +88,13 @@ namespace Socket.Io.Client.Core.Processing
                             data.Add(element);
                         }
                     }
-                    
-                    var message = new EventMessageEvent(ioEvent.ToString(), data);
+
+                    var message = new EventMessageEvent(ioEvent.ToString(), packet.Id.HasValue, Callback, data);
                     _client.Events.EventMessageSubject.OnNext(message);
+
+                    void Callback(object callbackData) => _client.EmitAcknowledge(
+                        packet.Id ?? throw new NotSupportedException("This message does not support acknowledgement."),
+                        callbackData);
                 }
                 else
                 {
