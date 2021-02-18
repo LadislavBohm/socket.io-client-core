@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace Socket.Io.Client.Core.Model.Response
 {
@@ -14,9 +15,13 @@ namespace Socket.Io.Client.Core.Model.Response
             PingTimeout = pingTimeout;
         }
 
+        [JsonPropertyName("sid")]
         public string Sid { get; }
+        [JsonPropertyName("upgrades")]
         public IList<string> Upgrades { get; }
+        [JsonPropertyName("pingInterval")]
         public long PingInterval { get; }
+        [JsonPropertyName("pingTimeout")]
         public long PingTimeout { get; }
 
         public override string ToString()

@@ -11,7 +11,7 @@ namespace Socket.Io.Client.Core.Test.Extensions
     {
         public static Task OpenTestAsync(this SocketIoClient client, Uri uri = null, string path = "some-path")
         {
-            uri ??= new Uri("http://localhost:3000");
+            uri ??= new Uri("http://localhost:8764");
             return client.OpenAsync(uri, new SocketIoOpenOptions(path));
         }
 
@@ -19,7 +19,7 @@ namespace Socket.Io.Client.Core.Test.Extensions
         {
             using var called = client.Emit("join", roomName).SubscribeCalled(e =>
                 {
-                    Assert.Equal("joined", e.FirstData);
+                    Assert.Equal("joined", e.Data[0].ToString());
                 });
 
             await called.AssertOnceAsync(TimeSpan.FromMilliseconds(100));

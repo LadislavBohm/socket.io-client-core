@@ -75,7 +75,7 @@ namespace Socket.Io.Client.Core.Test
                 var called = client.On("namespace-message").SubscribeCalled(m =>
                 {
                     Assert.Equal("namespace-message", m.EventName);
-                    Assert.Equal("namespace-message", m.FirstData);
+                    Assert.Equal("namespace-message", m.Data[0].ToString());
                 });
 
                 await client.OpenTestAsync();
@@ -91,10 +91,10 @@ namespace Socket.Io.Client.Core.Test
                 var called = client.On("namespace-message").SubscribeCalled(m =>
                 {
                     Assert.Equal("namespace-message", m.EventName);
-                    Assert.Equal("namespace-message", m.FirstData);
+                    Assert.Equal("namespace-message", m.Data[0].ToString());
                 });
 
-                await client.OpenTestAsync(new Uri("http://localhost:3000/some-namespace"));
+                await client.OpenTestAsync(new Uri("http://localhost:8764/some-namespace"));
 
                 await called.AssertAtLeastAsync(3, TimeSpan.FromMilliseconds(100));
             }
@@ -105,10 +105,10 @@ namespace Socket.Io.Client.Core.Test
                 using var client = CreateClient();
                 var called = client.On("test-room").SubscribeCalled(e =>
                 {
-                    Assert.Equal("welcome", e.FirstData);
+                    Assert.Equal("welcome", e.Data[0].ToString());
                 });
 
-                await client.OpenTestAsync(new Uri("http://localhost:3000/some-namespace?roomId=test-room"));
+                await client.OpenTestAsync(new Uri("http://localhost:8764/some-namespace?roomId=test-room"));
 
                 await called.AssertOnceAsync(TimeSpan.FromMilliseconds(100));
             }

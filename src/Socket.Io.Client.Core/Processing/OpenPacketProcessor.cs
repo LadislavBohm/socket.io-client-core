@@ -1,11 +1,11 @@
 ﻿using System.IO;
 using System.Reactive;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Socket.Io.Client.Core.Model.Response;
 using Socket.Io.Client.Core.Model.SocketEvent;
 using Socket.Io.Client.Core.Model.SocketIo;
-using Utf8Json;
 
 namespace Socket.Io.Client.Core.Processing
 {
@@ -28,7 +28,7 @@ namespace Socket.Io.Client.Core.Processing
                 _socket.Events.ErrorSubject.OnNext(new ErrorEvent($"Missing data in {packet.EngineIoType} packet."));
             }
 
-            var handshake = _socket.Options.JsonSerializer.Deserialize<HandshakeResponse>(packet.Data);
+            var handshake = JsonSerializer.Deserialize<HandshakeResponse>(packet.Data, _socket.Options.JsonSerializerOptions);
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.LogDebug($"Received handshake data: {handshake}.");
 

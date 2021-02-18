@@ -27,7 +27,7 @@ namespace Socket.Io.Client.Core.Test
                 await client.OpenTestAsync();
                 using var called = client.Emit("ack-message").SubscribeCalled(m =>
                 {
-                    Assert.Equal("ack-response", m.FirstData);
+                    Assert.Equal("ack-response", m.Data[0].ToString());
                 });
                 
                 await called.AssertOnceAsync(TimeSpan.FromMilliseconds(100));
@@ -46,7 +46,7 @@ namespace Socket.Io.Client.Core.Test
                     {
                         messages.Add(client.Emit("ack-message").SubscribeCalled(m =>
                         {
-                            Assert.Equal("ack-response", m.FirstData);
+                            Assert.Equal("ack-response", m.Data[0].ToString());
                         }));
                     }
 
@@ -72,7 +72,7 @@ namespace Socket.Io.Client.Core.Test
                     {
                         messages.Add(client.Emit("ack-message").SubscribeCalled(m =>
                         {
-                            Assert.Equal("ack-response", m.FirstData);
+                            Assert.Equal("ack-response", m.Data[0].ToString());
                         }));
                     });
 
@@ -94,11 +94,11 @@ namespace Socket.Io.Client.Core.Test
 
                 var roomWelcome = client.On("new-room").SubscribeCalled(e =>
                 {
-                    Assert.Equal("welcome", e.FirstData);
+                    Assert.Equal("welcome", e.Data[0].ToString());
                 });
                 var roomJoined = client.Emit("join", "new-room").SubscribeCalled(e =>
                 {
-                    Assert.Equal("joined", e.FirstData);
+                    Assert.Equal("joined", e.Data[0].ToString());
                 });
 
                 await Task.WhenAll(
@@ -126,11 +126,11 @@ namespace Socket.Io.Client.Core.Test
                 bool aSending = true;
                 using var calledA = clientA.On(roomName).SubscribeCalled(e =>
                 {
-                    Assert.Equal(aSending ? "a-message" : "b-message", e.FirstData);
+                    Assert.Equal(aSending ? "a-message" : "b-message", e.Data[0].ToString());
                 });
                 using var calledB = clientB.On(roomName).SubscribeCalled(e =>
                 {
-                    Assert.Equal(aSending ? "a-message" : "b-message", e.FirstData);
+                    Assert.Equal(aSending ? "a-message" : "b-message", e.Data[0].ToString());
                 });
 
                 clientA.Emit(roomName, "a-message");
@@ -145,7 +145,6 @@ namespace Socket.Io.Client.Core.Test
                 aSending = false;
 
                 clientA.Emit(roomName, "b-message");
-
                 await Task.WhenAll(
                     calledA.AssertExactlyAsync(2,TimeSpan.FromMilliseconds(50)),
                     calledB.AssertExactlyAsync(2, TimeSpan.FromMilliseconds(50))
