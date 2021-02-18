@@ -18,6 +18,12 @@ PM> Install-Package Socket.Io.Client.Core
 - Monitor socket state
   - React to various socket high/low-level events
 
+## Changelog
+
+- 1.1.0
+  - moved from Utf8Json to System.Text.Json (<b>breaking change</b>)
+  - fixed parsing of multiple arguments where some of them were not JSON serialized
+
 ## Examples
 
 For more examples see [test project](https://github.com/LadislavBohm/socket.io-client-core/tree/master/src/Socket.Io.Client.Core.Test).
