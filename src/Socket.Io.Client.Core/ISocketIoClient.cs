@@ -17,6 +17,8 @@ namespace Socket.Io.Client.Core
         IObservable<AckMessageEvent> Emit(string eventName);
         IObservable<AckMessageEvent> Emit<TData>(string eventName, TData data);
 
+        internal void EmitAcknowledge<TData>(int packetId, TData data);
+
         IObservable<EventMessageEvent> On(string eventName);
     }
 }

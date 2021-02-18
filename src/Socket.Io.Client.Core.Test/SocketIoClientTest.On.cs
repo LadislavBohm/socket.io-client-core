@@ -58,6 +58,22 @@ namespace Socket.Io.Client.Core.Test
                     called.ForEach(c => c.Dispose());
                 }
             }
+
+            [Fact]
+            public async Task Callback_ShouldReceiveAckOnServer()
+            {
+                using var client = CreateClient();
+
+                client.On("hello").Subscribe(e =>
+                {
+                    e.Acknowledge("hello-ack");
+                });
+
+                await client.OpenTestAsync();
+                
+                await Task.Delay(TimeSpan.FromMilliseconds(200));
+                //this test needs to be manually check on server
+            }
         }
     }
 }

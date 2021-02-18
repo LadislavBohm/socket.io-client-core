@@ -152,7 +152,7 @@ namespace Socket.Io.Client.Core
             if (data != null)
             {
                 sb.Append(",");
-                sb.Append(JsonSerializer.Serialize(data, JsonOptions));
+                sb.Append(SerializeData(data));
             }
 
             sb.Append("]");
@@ -162,6 +162,26 @@ namespace Socket.Io.Client.Core
             
             Send(packet);
             return result;
+        }
+
+        void ISocketIoClient.EmitAcknowledge<TData>(int packageId, TData data)
+        {
+            ThrowIfNotRunning();
+
+            Logger.LogDebug($"Emitting callback for packet: {packageId}");
+            var sb = new StringBuilder()
+                .Append("[");
+
+            if (data != null)
+            {
+                sb.Append(SerializeData(data));
+            }
+
+            sb.Append("]");
+
+            var packet = CreatePacket(EngineIoType.Message, SocketIoType.Ack, sb.ToString(), packageId);
+            
+            Send(packet);
         }
 
         public IObservable<EventMessageEvent> On(string eventName)
@@ -291,6 +311,12 @@ namespace Socket.Io.Client.Core
         {
             return new Packet(engineType, socketType, engineType == EngineIoType.Message ? _namespace : null, data, id,
                 0, null);
+        }
+
+        private string SerializeData<TData>(TData data)
+        {
+            if (data is string stringData) return $"\"{stringData}\"";
+            return JsonSerializer.Serialize(data, JsonOptions);
         }
 
         private int GetNextPacketId() => Interlocked.Increment(ref _packetId);

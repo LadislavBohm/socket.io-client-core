@@ -36,6 +36,12 @@ io.on("connection", client => {
     }
   });
 
+  //send hello to client on new connection
+  console.log("sending hello to client");
+  client.emit("hello", "hello", data => {
+    console.log("received hello callback from client", data);
+  });
+
   //handle join emit and join user to a room
   const rooms = {};
   client.on("join", (data, callback) => {
